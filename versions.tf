@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 
 terraform {
-  required_version = ">= 1.3"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -12,5 +11,14 @@ terraform {
       source  = "azurenoops/azurenoopsutils"
       version = "~> 1.0.4"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.1.0"
+    }
+    tls = {
+      source = "hashicorp/tls"
+      version = ">= 3.1.0"
+    }
   }
+  required_version = ">= 1.3"
 }
