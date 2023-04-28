@@ -4,7 +4,7 @@
 
 This Overlay Terraform module can deploy Azure Windows or Linux virtual machines with support for Public IP, proximity placement group, Availability Set, boot diagnostics, data disks, and Network Security Group. It supports existing ssh keys and produces ssh key pairs for Linux VMs as needed. If you do not provide a special password for Windows VMs it generates random passwords. This module can  be utilized in a [SCCA compliant network](https://registry.terraform.io/modules/azurenoops/overlays-hubspoke/azurerm/latest).
 
-This module allows you to use an existing NSG group. To enable this functionality, replace the input 'existing_network_security_group_id' with the current NSG group's valid resource id and remove all NSG inbound rules from the module.
+This module requires you to use an existing NSG group. To enable this functionality, replace the input 'existing_network_security_group_name' with the current NSG group's valid resource name and you can use NSG inbound rules from the module.
 
 ## SCCA Compliance
 
@@ -325,7 +325,8 @@ module "virtual-machine" {
   virtual_machine_size    = "Standard_B2s"
   generate_admin_ssh_key  = true
   instances_count         = 2
-
+  
+  existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"
@@ -347,7 +348,7 @@ module "virtual-machine" {
 
 ## Using exisging Network Security Groups
 
-To maintain capabilities, enterprise environments require the utilization of pre-existing NSG groups. This module facilitates the use of existing network security groups. Set the input `existing_network_security_group_id` to a valid NSG resource id and delete all NSG inbound rules blocks from the module to use this functionality.
+To maintain capabilities, enterprise environments require the utilization of pre-existing NSG groups. This module facilitates the use of existing network security groups. Set the input `existing_network_security_group_name` to use a valid NSG resource name.
 
 ```terraform
 data "azurerm_network_security_group" "example" {
@@ -368,9 +369,8 @@ module "virtual-machine" {
   instances_count         = 2
 
   # Network Seurity group port allow definitions for each Virtual Machine
-  # NSG association to be added automatically for all network interfaces.
-  # Remove this NSG rules block, if `existing_network_security_group_id` is specified
-  existing_network_security_group_id = data.azurerm_network_security_group.example.id
+  # NSG association to be added automatically for all network interfaces.  
+  existing_network_security_group_name = data.azurerm_network_security_group.example.name
 
 # .... omitted for bravity
 
@@ -494,7 +494,7 @@ An effective naming convention creates resource names by incorporating vital res
 | <a name="input_enable_public_ip_address"></a> [enable\_public\_ip\_address](#input\_enable\_public\_ip\_address) | Reference to a Public IP Address to associate with the NIC | `any` | `null` | no |
 | <a name="input_enable_ultra_ssd_data_disk_storage_support"></a> [enable\_ultra\_ssd\_data\_disk\_storage\_support](#input\_enable\_ultra\_ssd\_data\_disk\_storage\_support) | Should the capacity to enable Data Disks of the UltraSSD\_LRS storage account type be supported on this Virtual Machine | `bool` | `false` | no |
 | <a name="input_enable_vm_availability_set"></a> [enable\_vm\_availability\_set](#input\_enable\_vm\_availability\_set) | Manages an Availability Set for Virtual Machines. | `bool` | `false` | no |
-| <a name="input_existing_network_security_group_id"></a> [existing\_network\_security\_group\_id](#input\_existing\_network\_security\_group\_id) | The resource id of existing network security group | `any` | `null` | no |
+| <a name="input_existing_network_security_group_name"></a> [existing\_network\_security\_group\_id](#input\_existing\_network\_security\_group\_id) | The resource name of existing network security group | `any` | `null` | no |
 | <a name="input_existing_resource_group_name"></a> [existing\_resource\_group\_name](#input\_existing\_resource\_group\_name) | The name of the existing resource group to use. If not set, the name will be generated using the `org_name`, `workload_name`, `deploy_environment` and `environment` variables. | `string` | `null` | no |
 | <a name="input_extensions_add_tags"></a> [extensions\_add\_tags](#input\_extensions\_add\_tags) | Extra tags to set on the VM extensions. | `map(string)` | `{}` | no |
 | <a name="input_generate_admin_ssh_key"></a> [generate\_admin\_ssh\_key](#input\_generate\_admin\_ssh\_key) | Generates a secure private key and encodes it as PEM. | `bool` | `false` | no |

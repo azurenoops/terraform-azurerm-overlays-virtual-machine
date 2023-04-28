@@ -2,7 +2,7 @@
 
 This terraform overlay module is intended for the deployment of Azure virtual machines(Linux) with Public IP, proximity placement group, Availability Set, boot diagnostics, data disks, and Network Security Group support. It allows you to use current SSH keys or generate new ones if necessary.
 
-This module allows you to use an existing NSG group. To enable this functionality, replace the input 'existing_network_security_group_id' with the current NSG group's valid resource id and remove all NSG inbound rules from the module.
+This module requires you to use an existing NSG group. To enable this functionality, replace the input 'existing_network_security_group_name' with the current NSG group's valid resource name and you can use NSG inbound rules from the module.
 
 ## Module Usage to create Linux Virtual machine with optional resources
 
@@ -46,7 +46,8 @@ module "mod_virtual_machine" {
 
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
-  # If 'existing_network_security_group_id' is supplied, remove this NSG rules block.
+  # When 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
+  existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"

@@ -1,6 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+data "azuread_group" "vm_admins_group" {
+  display_name = "Virtual Machines Admins"
+}
+
+data "azuread_group" "vm_users_group" {
+  display_name = "Virtual Machines Users"
+}
+
 resource "azurerm_resource_group" "windows-rg" {
   name     = "windows-vm-rg"
   location = var.location
@@ -40,17 +48,6 @@ resource "azurerm_network_security_group" "windows-nsg" {
   name                = "vm-nsg"
   location            = var.location
   resource_group_name = azurerm_resource_group.windows-rg.name
-  security_rule {
-    name                       = "RDP"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "3389"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
   tags = {
     environment = "test"
   }
