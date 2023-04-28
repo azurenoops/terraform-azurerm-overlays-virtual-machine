@@ -43,7 +43,8 @@ module "mod_virtual_machine" {
 
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
-  # If 'existing_network_security_group_id' is supplied, remove this NSG rules block.
+  # If 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
+  existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"
@@ -77,6 +78,16 @@ module "mod_virtual_machine" {
       storage_account_type = "Standard_LRS"
     }
   ]
+
+  # AAD Login is used to login to the VM using Azure Active Directory credentials.
+  /* aad_login_enabled = true
+  aad_login_user_objects_ids = [
+    data.azuread_group.vm_users_group.object_id
+  ]
+
+  aad_login_admin_objects_ids = [
+    data.azuread_group.vm_admins_group.object_id
+  ] */
 
   # (Optional) To activate Azure Monitoring and install log analytics agents 
   # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    

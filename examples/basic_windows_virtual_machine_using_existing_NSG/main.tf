@@ -10,7 +10,6 @@ module "mod_virtual_machine" {
 
   depends_on = [
     azurerm_log_analytics_workspace.windows-log,
-    azurerm_network_security_group.windows-nsg,
   ]
 
   # Resource Group, location, VNet and Subnet details
@@ -22,13 +21,11 @@ module "mod_virtual_machine" {
   virtual_network_name         = azurerm_virtual_network.windows-vnet.name
   subnet_name                  = azurerm_subnet.windows-snet.name
 
-  # This module supports a variety of pre-configured windows and Windows distributions.
-  # See the README.md file for more pre-defined Ubuntu, Centos, and RedHat images.
-  # If you use gen2 distributions, please use gen2 images with supported VM sizes.
-  # To generate a random admin password, specify 'disable_password_authentication = false' 
-  # To use your own password, specify a valid password with the 'admin_password' parameter 
-  # To produce an SSH key pair, specify 'generate_admin_ssh_key = true'
-  # To use an existing key pair, set 'admin_ssh_key_data' to the path of a valid SSH public key.  
+  # This module support multiple Pre-Defined windows and Windows Distributions.
+  # Check the README.md file for more pre-defined images for Ubuntu, Centos, RedHat.
+  # Please make sure to use gen2 images supported VM sizes if you use gen2 distributions
+  # Specify `disable_password_authentication = false` to create random admin password
+  # Specify a valid password with `admin_password` argument to use your own password .  
   os_type                   = "windows"
   windows_distribution_name = "windows2019dc"
   virtual_machine_size      = "Standard_B2s"
@@ -44,8 +41,20 @@ module "mod_virtual_machine" {
 
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
-  # If 'existing_network_security_group_id' is supplied, remove this NSG rules block.
-  existing_network_security_group_id = azurerm_network_security_group.windows-nsg.id
+  # Using 'existing_network_security_group_name' is supplied then the module will use the existing NSG.
+  existing_network_security_group_name = azurerm_network_security_group.windows-nsg.name
+  nsg_inbound_rules = [
+    {
+      name                   = "ssh"
+      destination_port_range = "22"
+      source_address_prefix  = "*"
+    },
+    {
+      name                   = "http"
+      destination_port_range = "80"
+      source_address_prefix  = "*"
+    },
+  ]
 
   # Boot diagnostics are used to troubleshoot virtual machines by default. 
   # To use a custom storage account, supply a valid name for'storage_account_name'. 
@@ -68,10 +77,20 @@ module "mod_virtual_machine" {
     }
   ]
 
+  # AAD Login is used to login to the VM using Azure Active Directory credentials.
+  aad_login_enabled = true
+  aad_login_user_objects_ids = [
+    data.azuread_group.vm_users_group.object_id
+  ]
+
+  aad_login_admin_objects_ids = [
+    data.azuread_group.vm_admins_group.object_id
+  ]
+
   # (Optional) To activate Azure Monitoring and install log analytics agents 
   # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
   log_analytics_workspace_id = azurerm_log_analytics_workspace.windows-log.id
-
+  
   # Deploy log analytics agents on a virtual machine. 
   # Customer id and primary shared key for Log Analytics workspace are required.
   deploy_log_analytics_agent                 = true

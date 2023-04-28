@@ -13,7 +13,7 @@ variable "deploy_environment" {
 variable "workload_name" {
   description = "Name of the workload_name"
   type        = string
-  default = "vm-linux"
+  default = "vm-windows"
 }
 
 variable "org_name" {
