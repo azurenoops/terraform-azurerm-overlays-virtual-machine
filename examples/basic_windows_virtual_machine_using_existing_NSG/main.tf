@@ -78,14 +78,14 @@ module "mod_virtual_machine" {
   ]
 
   # AAD Login is used to login to the VM using Azure Active Directory credentials.
-  aad_login_enabled = true
+/*   aad_login_enabled = true
   aad_login_user_objects_ids = [
     data.azuread_group.vm_users_group.object_id
   ]
 
   aad_login_admin_objects_ids = [
     data.azuread_group.vm_admins_group.object_id
-  ]
+  ] */
 
   # (Optional) To activate Azure Monitoring and install log analytics agents 
   # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    

@@ -1,13 +1,13 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-data "azuread_group" "vm_admins_group" {
+/* data "azuread_group" "vm_admins_group" {
   display_name = "Virtual Machines Admins"
 }
 
 data "azuread_group" "vm_users_group" {
   display_name = "Virtual Machines Users"
-}
+} */
 
 resource "azurerm_resource_group" "windows-rg" {
   name     = "windows-vm-rg"

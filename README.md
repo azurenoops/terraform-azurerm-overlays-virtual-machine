@@ -79,7 +79,8 @@ module "mod_virtual_machine" {
 
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
-  # If 'existing_network_security_group_id' is supplied, remove this NSG rules block.
+  # When 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
+  existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"
