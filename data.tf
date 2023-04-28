@@ -18,6 +18,11 @@ data "azurerm_subnet" "snet" {
   resource_group_name  = var.existing_resource_group_name
 }
 
+data "azurerm_network_security_group" "nsg" {
+  name                = var.existing_network_security_group_name
+  resource_group_name = var.existing_resource_group_name
+}
+
 data "azurerm_storage_account" "storeacc" {
   count               = var.storage_account_name != null ? 1 : 0
   name                = var.storage_account_name

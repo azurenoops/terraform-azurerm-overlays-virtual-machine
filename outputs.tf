@@ -60,7 +60,7 @@ output "windows_virtual_machine_ids" {
 
 output "network_security_group_ids" {
   description = "List of Network security groups and ids"
-  value       = var.existing_network_security_group_id == null ? azurerm_network_security_group.nsg.*.id : null
+  value       = var.existing_network_security_group_name != null ? data.azurerm_network_security_group.nsg.id : null
 }
 
 output "vm_availability_set_id" {

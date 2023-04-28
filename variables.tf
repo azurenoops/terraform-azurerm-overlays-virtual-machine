@@ -278,8 +278,8 @@ variable "enable_proximity_placement_group" {
 # VM NSG Configuration   ##
 ###########################
 
-variable "existing_network_security_group_id" {
-  description = "The resource id of existing network security group"
+variable "existing_network_security_group_name" {
+  description = "The resource name of existing network security group"
   default     = null
 }
 
@@ -868,5 +868,15 @@ variable "backup_policy_id" {
 
 variable "patch_mode" {
   description = "Specifies the mode of in-guest patching to Linux or Windows Virtual Machine. Possible values are `Manual`, `AutomaticByOS` and `AutomaticByPlatform`"
-  default     = "AutomaticByOS"
+  default     = "AutomaticByPlatform"
+}
+
+##################################
+# VM Mintenance Configurations  ##
+##################################
+
+variable "maintenance_configuration_ids" {
+  description = "List of maintenance configurations to attach to this VM."
+  type        = list(string)
+  default     = []
 }

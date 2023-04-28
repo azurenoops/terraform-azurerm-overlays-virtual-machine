@@ -21,7 +21,7 @@ resource "azurerm_public_ip" "pip" {
   allocation_method   = var.public_ip_allocation_method
   sku                 = var.public_ip_sku
   sku_tier            = var.public_ip_sku_tier
-  domain_name_label   = local.domain_name_label
+  domain_name_label   = var.domain_name_label
   zones               = var.public_ip_availability_zone
   tags                = merge({ "ResourceName" = lower("${local.vm_pub_ip_name}-0${count.index + 1}") }, var.add_tags, var.public_ip_add_tags, )
 
@@ -237,3 +237,16 @@ resource "azurerm_windows_virtual_machine" "win_vm" {
     ]
   }
 }
+
+ # Windows VM Shutdown Schedule : https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule
+/* resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_schedule" {
+  count                 = var.os_type == "windows" || var.os_type == "linux" ? var.instances_count : 0
+  virtual_machine_id    = var.os_type == "windows" ? azurerm_windows_virtual_machine.win_vm.*.id : azurerm_linux_virtual_machine.linux_vm.*.id
+  location              = module.mod_azure_region_lookup.location_cli
+  enabled               = var.enable_shutdown_schedule
+  daily_recurrence_time = var.shutdown_time
+  timezone              = "SA Eastern Standard Time"
+  notification_settings {
+    enabled = var.enable_shutdown_schedule_notification
+  }
+} */
