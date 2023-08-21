@@ -5,6 +5,30 @@
 # Outputs    ##
 ###############
 
+output "linux_vm_id" {
+  description = "Id for the Linux VM, if multiple VM's are created then it will be a list of ids"
+  sensitive   = true
+  value       = var.os_type == "linux" ? azurerm_linux_virtual_machine.linux_vm.*.id : null
+}
+
+output "windows_vm_id" {
+  description = "Id for the Linux VM, if multiple VM's are created then it will be a list of ids"
+  sensitive   = true
+  value       = var.os_type == "windows" ? azurerm_windows_virtual_machine.win_vm.*.id : null
+}
+
+output "linux_vm_name" {
+  description = "Name for the Linux VM, if multiple VM's are created then it will be a list of names"
+  sensitive   = true
+  value       = var.os_type == "linux" ? azurerm_linux_virtual_machine.linux_vm.*.name : null
+}
+
+output "windows_vm_name" {
+  description = "Name for the Linux VM, if multiple VM's are created then it will be a list of names"
+  sensitive   = true
+  value       = var.os_type == "windows" ? azurerm_windows_virtual_machine.win_vm.*.name : null
+}
+
 output "admin_ssh_key_public" {
   description = "The generated public key data in PEM format"
   value       = var.disable_password_authentication == true && var.generate_admin_ssh_key == true && var.os_type == "linux" ? tls_private_key.rsa[0].public_key_openssh : null
