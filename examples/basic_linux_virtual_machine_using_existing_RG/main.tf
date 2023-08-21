@@ -9,17 +9,21 @@ module "mod_virtual_machine" {
   source = "../../"
 
   depends_on = [
-    azurerm_log_analytics_workspace.linux-log,    
+    azurerm_log_analytics_workspace.linux-log,
   ]
 
   # Resource Group, location, VNet and Subnet details
-  existing_resource_group_name = azurerm_resource_group.linux-rg.name
+  existing_resource_group_name = azurerm_resource_group.linux-vm-rg.name
   location                     = var.location
   deploy_environment           = var.deploy_environment
   org_name                     = var.org_name
   workload_name                = var.workload_name
-  virtual_network_name         = azurerm_virtual_network.linux-vnet.name
-  subnet_name                  = azurerm_subnet.linux-snet.name
+
+  # Lookup Network Information for VM deployment
+  existing_virtual_network_resource_group_name = azurerm_virtual_network.linux-vnet.resource_group_name
+  existing_virtual_network_name                = azurerm_virtual_network.linux-vnet.name
+  existing_subnet_name                         = azurerm_subnet.linux-snet.name
+  existing_network_security_group_name         = azurerm_network_security_group.linux-nsg.name
 
   # This module supports a variety of pre-configured Linux and Windows distributions.
   # See the README.md file for more pre-defined Ubuntu, Centos, and RedHat images.
@@ -28,23 +32,24 @@ module "mod_virtual_machine" {
   # To use your own password, specify a valid password with the 'admin_password' parameter 
   # To produce an SSH key pair, specify 'generate_admin_ssh_key = true'
   # To use an existing key pair, set 'admin_ssh_key_data' to the path of a valid SSH public key.  
-  os_type                 = "linux"
-  linux_distribution_name = "ubuntu2004"
-  virtual_machine_size    = "Standard_B2s"
-  generate_admin_ssh_key  = true
-  instances_count         = 2 # Number of VM's to be deployed
+  os_type                         = "linux"
+  linux_distribution_name         = "ubuntu2004"
+  virtual_machine_size            = "Standard_B2s"
+  disable_password_authentication = false
+  admin_username                  = "azureadmin"
+  admin_password                  = "P@$$w0rd1234!"
+  instances_count                 = 2 # Number of VM's to be deployed
 
   # The proximity placement group, Availability Set, and assigning a public IP address to VMs are all optional.
   # If you don't wish to utilize these arguments, delete them from the module. 
-  enable_proximity_placement_group = true
-  enable_vm_availability_set       = true  
+  enable_proximity_placement_group   = true
+  enable_vm_availability_set         = true
   private_ip_address_allocation_type = "Static" # Static or Dynamic
-  private_ip_address = ["10.0.1.36", "10.0.1.37"]
+  private_ip_address                 = ["10.0.1.36", "10.0.1.37"]
 
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
   # If 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
-  existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"
