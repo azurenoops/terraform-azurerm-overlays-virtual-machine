@@ -136,13 +136,18 @@ variable "admin_ssh_key_data" {
 # VM Network Configuration  ##
 ##############################
 
-variable "virtual_network_name" {
-  description = "The name of the virtual network"
+variable "existing_virtual_network_resource_group_name" {
+  description = "The name of the virtual network resource group to attach Subnet and NSG to VMs. It can be different from the VM resource group."
   default     = null
 }
 
-variable "subnet_name" {
-  description = "The name of the subnet to use in VM scale set"
+variable "existing_virtual_network_name" {
+  description = "The name of the virtual network to attach Subnet and NSG to VMs. It can be different from the VM resource group."
+  default     = null
+}
+
+variable "existing_subnet_name" {
+  description = "The name of the subnet to attach Subnet and NSG to VMs. It can be different from the VM resource group."
   default     = null
 }
 
