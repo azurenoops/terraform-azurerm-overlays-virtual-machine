@@ -238,7 +238,7 @@ resource "azurerm_windows_virtual_machine" "win_vm" {
   }
 }
 
- # Windows VM Shutdown Schedule : https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule
+# Windows VM Shutdown Schedule : https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule
 /* resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_schedule" {
   count                 = var.os_type == "windows" || var.os_type == "linux" ? var.instances_count : 0
   virtual_machine_id    = var.os_type == "windows" ? azurerm_windows_virtual_machine.win_vm.*.id : azurerm_linux_virtual_machine.linux_vm.*.id
