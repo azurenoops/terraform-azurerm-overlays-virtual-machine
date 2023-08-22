@@ -46,7 +46,7 @@ resource "azurerm_network_security_rule" "nsg_rule" {
   source_address_prefix       = each.value.security_rule.source_address_prefix
   destination_address_prefix  = element(concat(data.azurerm_subnet.snet.0.address_prefixes, [""]), 0)
   description                 = "Inbound_Port_${each.value.security_rule.destination_port_range}"
-  resource_group_name         = var.existing_resource_group_name != null ? var.existing_resource_group_name : local.resource_group_name 
+  resource_group_name         = data.azurerm_network_security_group.nsg.resource_group_name
   network_security_group_name = data.azurerm_network_security_group.nsg.name
 }
 

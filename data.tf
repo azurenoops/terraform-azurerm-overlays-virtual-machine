@@ -10,19 +10,19 @@ data "azurerm_client_config" "current" {}
 data "azurerm_virtual_network" "vnet" {
   count               = var.existing_virtual_network_name != null ? 1 : 0
   name                = var.existing_virtual_network_name
-  resource_group_name = var.existing_virtual_network_resource_group_name
+  resource_group_name = var.existing_virtual_network_resource_group_name == null ? local.resource_group_name : var.existing_virtual_network_resource_group_name
 }
 
 data "azurerm_subnet" "snet" {
   count                = var.existing_subnet_name != null ? 1 : 0
   name                 = var.existing_subnet_name
   virtual_network_name = data.azurerm_virtual_network.vnet.0.name
-  resource_group_name  = var.existing_virtual_network_resource_group_name
+  resource_group_name  = var.existing_virtual_network_resource_group_name == null ? local.resource_group_name : var.existing_virtual_network_resource_group_name
 }
 
 data "azurerm_network_security_group" "nsg" {
   name                = var.existing_network_security_group_name
-  resource_group_name = var.existing_virtual_network_resource_group_name
+  resource_group_name = var.existing_virtual_network_resource_group_name == null ? local.resource_group_name : var.existing_virtual_network_resource_group_name
 }
 
 data "azurerm_storage_account" "storeacc" {
