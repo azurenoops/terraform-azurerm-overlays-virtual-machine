@@ -13,13 +13,18 @@ module "mod_virtual_machine" {
   ]
 
   # Resource Group, location, VNet and Subnet details
-  existing_resource_group_name = azurerm_resource_group.windows-rg.name
+  # Resource Group, location, VNet and Subnet details
+  existing_resource_group_name = azurerm_resource_group.windows-vm-rg.name
   location                     = var.location
   deploy_environment           = var.deploy_environment
   org_name                     = var.org_name
   workload_name                = var.workload_name
-  virtual_network_name         = azurerm_virtual_network.windows-vnet.name
-  subnet_name                  = azurerm_subnet.windows-snet.name
+
+  # Lookup Network Information for VM deployment
+  existing_virtual_network_resource_group_name = azurerm_virtual_network.windows-vnet.resource_group_name
+  existing_virtual_network_name                = azurerm_virtual_network.windows-vnet.name
+  existing_subnet_name                         = azurerm_subnet.windows-snet.name
+  existing_network_security_group_name         = azurerm_network_security_group.windows-nsg.name
 
   # This module support multiple Pre-Defined windows and Windows Distributions.
   # Check the README.md file for more pre-defined images for Ubuntu, Centos, RedHat.
@@ -42,7 +47,6 @@ module "mod_virtual_machine" {
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
   # Using 'existing_network_security_group_name' is supplied then the module will use the existing NSG.
-  existing_network_security_group_name = azurerm_network_security_group.windows-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"
