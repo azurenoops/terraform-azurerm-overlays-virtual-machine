@@ -13,25 +13,30 @@ module "mod_virtual_machine" {
   ]
 
   # Resource Group, location, VNet and Subnet details
+  # Resource Group, location, VNet and Subnet details
   existing_resource_group_name = azurerm_resource_group.windows-rg.name
   location                     = var.location
   deploy_environment           = var.deploy_environment
   org_name                     = var.org_name
   workload_name                = var.workload_name
-  virtual_network_name         = azurerm_virtual_network.windows-vnet.name
-  subnet_name                  = azurerm_subnet.windows-snet.name
+
+  # Lookup Network Information for VM deployment
+  existing_virtual_network_resource_group_name = azurerm_virtual_network.windows-vnet.resource_group_name
+  existing_virtual_network_name                = azurerm_virtual_network.windows-vnet.name
+  existing_subnet_name                         = azurerm_subnet.windows-snet.name
+  existing_network_security_group_name         = azurerm_network_security_group.windows-nsg.name
 
   # This module support multiple Pre-Defined windows and Windows Distributions.
   # Check the README.md file for more pre-defined images for Ubuntu, Centos, RedHat.
   # Please make sure to use gen2 images supported VM sizes if you use gen2 distributions
   # Specify `disable_password_authentication = false` to create random admin password
   # Specify a valid password with `admin_password` argument to use your own password .  
-  os_type                   = "windows"
-  windows_distribution_name = "windows2019dc"
-  virtual_machine_size      = "Standard_B2s"
-  admin_username            = "azureadmin"
-  admin_password            = "P@$$w0rd1234!"
-  instances_count           = 2 # Number of VM's to be deployed
+  os_type                         = "windows"
+  windows_distribution_name       = "windows2019dc"
+  virtual_machine_size            = "Standard_B2s"
+  admin_username                  = "azureadmin"
+  admin_password                  = "P@$$w0rd1234!"
+  instances_count                 = 2 # Number of VM's to be deployed
 
   # The proximity placement group, Availability Set, and assigning a public IP address to VMs are all optional.
   # If you don't wish to utilize these arguments, delete them from the module. 
@@ -42,7 +47,6 @@ module "mod_virtual_machine" {
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
   # Using 'existing_network_security_group_name' is supplied then the module will use the existing NSG.
-  existing_network_security_group_name = azurerm_network_security_group.windows-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"
@@ -78,7 +82,7 @@ module "mod_virtual_machine" {
   ]
 
   # AAD Login is used to login to the VM using Azure Active Directory credentials.
-/*   aad_login_enabled = true
+  /*   aad_login_enabled = true
   aad_login_user_objects_ids = [
     data.azuread_group.vm_users_group.object_id
   ]
@@ -90,7 +94,7 @@ module "mod_virtual_machine" {
   # (Optional) To activate Azure Monitoring and install log analytics agents 
   # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
   log_analytics_workspace_id = azurerm_log_analytics_workspace.windows-log.id
-  
+
   # Deploy log analytics agents on a virtual machine. 
   # Customer id and primary shared key for Log Analytics workspace are required.
   deploy_log_analytics_agent                 = true

@@ -14,5 +14,5 @@ locals {
   vm_nsg_name           = coalesce(var.custom_nic_name, data.azurenoopsutils_resource_name.nsg.result)
   ip_configuration_name = coalesce(var.custom_ipconfig_name, "vm-nic-ipconfig")
   vm_avset_name         = data.azurenoopsutils_resource_name.avset.result
-  vm_ppg_name            = data.azurenoopsutils_resource_name.ppg.result
+  vm_ppg_name           = data.azurenoopsutils_resource_name.ppg.result
 }

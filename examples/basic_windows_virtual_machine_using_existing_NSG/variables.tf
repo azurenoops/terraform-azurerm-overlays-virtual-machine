@@ -1,23 +1,23 @@
 variable "location" {
   description = "Azure region in which instance will be hosted"
   type        = string
-  default = "eastus"
+  default     = "eastus"
 }
 
 variable "deploy_environment" {
   description = "Name of the workload's environnement"
   type        = string
-  default = "dev"
+  default     = "dev"
 }
 
 variable "workload_name" {
   description = "Name of the workload_name"
   type        = string
-  default = "win"
+  default     = "win"
 }
 
 variable "org_name" {
   description = "Name of the organization"
   type        = string
-  default = "anoa"
+  default     = "anoa"
 }

@@ -19,7 +19,7 @@ module "mod_azregions" {
 # Resource Group Creation
 #----------------------------------------------------------
 data "azurerm_resource_group" "rgrp" {
-  count = var.create_resource_group == false ? 1 : 0
+  count = var.create_vm_resource_group == false ? 1 : 0
   name  = var.existing_resource_group_name
 }
 
@@ -27,7 +27,7 @@ module "mod_scaffold_rg" {
   source  = "azurenoops/overlays-resource-group/azurerm"
   version = "~> 1.0.1"
 
-  count = var.create_resource_group ? 1 : 0
+  count = var.create_vm_resource_group ? 1 : 0
 
   location                = module.mod_azregions.location_cli
   use_location_short_name = var.use_location_short_name # Use the short location name in the resource group name

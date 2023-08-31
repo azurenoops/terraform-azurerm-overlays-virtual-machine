@@ -8,25 +8,27 @@ data "azurerm_client_config" "current" {}
 # VNet, Subnet selection & Random Resources
 #----------------------------------------------------------
 data "azurerm_virtual_network" "vnet" {
-  name                = var.virtual_network_name
-  resource_group_name = var.existing_resource_group_name
+  count               = var.existing_virtual_network_name != null ? 1 : 0
+  name                = var.existing_virtual_network_name
+  resource_group_name = var.existing_virtual_network_resource_group_name == null ? local.resource_group_name : var.existing_virtual_network_resource_group_name
 }
 
 data "azurerm_subnet" "snet" {
-  name                 = var.subnet_name
-  virtual_network_name = data.azurerm_virtual_network.vnet.name
-  resource_group_name  = var.existing_resource_group_name
+  count                = var.existing_subnet_name != null ? 1 : 0
+  name                 = var.existing_subnet_name
+  virtual_network_name = data.azurerm_virtual_network.vnet.0.name
+  resource_group_name  = var.existing_virtual_network_resource_group_name == null ? local.resource_group_name : var.existing_virtual_network_resource_group_name
 }
 
 data "azurerm_network_security_group" "nsg" {
   name                = var.existing_network_security_group_name
-  resource_group_name = var.existing_resource_group_name
+  resource_group_name = var.existing_virtual_network_resource_group_name == null ? local.resource_group_name : var.existing_virtual_network_resource_group_name
 }
 
 data "azurerm_storage_account" "storeacc" {
   count               = var.storage_account_name != null ? 1 : 0
   name                = var.storage_account_name
-  resource_group_name = var.existing_resource_group_name
+  resource_group_name = local.resource_group_name
 }
 
 resource "random_password" "passwd" {

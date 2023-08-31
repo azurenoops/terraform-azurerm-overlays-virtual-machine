@@ -18,7 +18,7 @@ resource "azurerm_network_interface" "nic" {
   ip_configuration {
     name                          = lower("ipconig-${format("%s%s", lower(replace(local.ip_configuration_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
     primary                       = true
-    subnet_id                     = data.azurerm_subnet.snet.id
+    subnet_id                     = data.azurerm_subnet.snet.0.id
     private_ip_address_allocation = var.private_ip_address_allocation_type
     private_ip_address            = var.private_ip_address_allocation_type == "Static" ? element(concat(var.private_ip_address, [""]), count.index) : null
     public_ip_address_id          = var.enable_public_ip_address == true ? element(concat(azurerm_public_ip.pip.*.id, [""]), count.index) : null
@@ -44,9 +44,9 @@ resource "azurerm_network_security_rule" "nsg_rule" {
   source_port_range           = "*"
   destination_port_range      = each.value.security_rule.destination_port_range
   source_address_prefix       = each.value.security_rule.source_address_prefix
-  destination_address_prefix  = element(concat(data.azurerm_subnet.snet.address_prefixes, [""]), 0)
+  destination_address_prefix  = element(concat(data.azurerm_subnet.snet.0.address_prefixes, [""]), 0)
   description                 = "Inbound_Port_${each.value.security_rule.destination_port_range}"
-  resource_group_name         = local.resource_group_name
+  resource_group_name         = data.azurerm_network_security_group.nsg.resource_group_name
   network_security_group_name = data.azurerm_network_security_group.nsg.name
 }
 

@@ -50,13 +50,17 @@ module "mod_virtual_machine" {
   version = "x.x.x"
 
   # Resource Group, location, VNet and Subnet details
-  resource_group_name  = azurerm_resource_group.linux-rg.name
-  location             = var.location
-  environment          = var.environment
-  org_name             = var.org_name
-  workload_name        = var.workload_name
-  virtual_network_name = azurerm_virtual_network.linux-vnet.name
-  subnet_name          = azurerm_subnet.linux-snet.name
+  existing_resource_group_name = azurerm_resource_group.linux-vm-rg.name
+  location                     = var.location
+  deploy_environment           = var.deploy_environment
+  org_name                     = var.org_name
+  workload_name                = var.workload_name
+
+  # Lookup Network Information for VM deployment
+  existing_virtual_network_resource_group_name = azurerm_virtual_network.linux-vnet.resource_group_name
+  existing_virtual_network_name                = azurerm_virtual_network.linux-vnet.name
+  existing_subnet_name                         = azurerm_subnet.linux-snet.name
+  existing_network_security_group_name         = azurerm_network_security_group.linux-nsg.name
 
   # This module supports a variety of pre-configured Linux and Windows distributions.
   # See the README.md file for more pre-defined Ubuntu, Centos, and RedHat images.
@@ -65,22 +69,24 @@ module "mod_virtual_machine" {
   # To use your own password, specify a valid password with the 'admin_password' parameter 
   # To produce an SSH key pair, specify 'generate_admin_ssh_key = true'
   # To use an existing key pair, set 'admin_ssh_key_data' to the path of a valid SSH public key.  
-  os_type                 = "linux"
-  linux_distribution_name = "ubuntu2004"
-  virtual_machine_size    = "Standard_B2s"
-  generate_admin_ssh_key  = true
-  instances_count         = 2 # Number of VM's to be deployed
+  os_type                         = "linux"
+  linux_distribution_name         = "ubuntu2004"
+  virtual_machine_size            = "Standard_B2s"
+  disable_password_authentication = false
+  admin_username                  = "azureadmin"
+  admin_password                  = "P@$$w0rd1234!"
+  instances_count                 = 2 # Number of VM's to be deployed
 
   # The proximity placement group, Availability Set, and assigning a public IP address to VMs are all optional.
   # If you don't wish to utilize these arguments, delete them from the module. 
-  enable_proximity_placement_group = true
-  enable_vm_availability_set       = true
-  enable_public_ip_address         = true
+  enable_proximity_placement_group   = true
+  enable_vm_availability_set         = true
+  private_ip_address_allocation_type = "Static" # Static or Dynamic
+  private_ip_address                 = ["10.0.1.36", "10.0.1.37"]
 
   # Network Seurity group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
-  # When 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
-  existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
+  # If 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
   nsg_inbound_rules = [
     {
       name                   = "ssh"
@@ -115,8 +121,18 @@ module "mod_virtual_machine" {
     }
   ]
 
- # (Optional) To activate Azure Monitoring and install log analytics agents 
- # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
+  # AAD Login is used to login to the VM using Azure Active Directory credentials.
+  /* aad_login_enabled = true
+  aad_login_user_objects_ids = [
+    data.azuread_group.vm_users_group.object_id
+  ]
+
+  aad_login_admin_objects_ids = [
+    data.azuread_group.vm_admins_group.object_id
+  ] */
+
+  # (Optional) To activate Azure Monitoring and install log analytics agents 
+  # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
   log_analytics_workspace_id = azurerm_log_analytics_workspace.linux-log.id
 
   # Deploy log analytics agents on a virtual machine. 
@@ -127,7 +143,7 @@ module "mod_virtual_machine" {
 
   # Adding additional TAG's to your Azure resources
   add_tags = {
-    Exmaple  = "basic_linux_virtual_machine_using_existing_RG"   
+    Exmaple = "basic_linux_virtual_machine_using_existing_RG"
   }
 }
 ```
@@ -216,7 +232,46 @@ module "virtual-machine" {
 }
 ```
 
-## Using exisging Network Security Groups
+## Using existing Network Resource Groups
+
+On occasion, you may need to deploy resources to diffent resource group but use the existing network resource group. This module allows you to use an existing network resource group by setting the input `existing_virtual_network_resource_group_name` to the name of the network resource group.
+
+```terraform
+
+```terraform
+data "azurerm_virtual_network" "example" {
+  name                = "nsg_mgnt_vnet_in"
+  resource_group_name = "vnet-shared-hub-westeurope-001"
+}
+
+data "azurerm_network_security_group" "example" {
+  name                = "nsg_mgnt_subnet_in"
+  resource_group_name = "vnet-shared-hub-westeurope-001"
+}
+
+module "virtual-machine" {
+   source  = "azurenoops/overlays-virtual-machine/azurerm"
+  version = "x.x.x"
+
+# .... omitted for bravity
+  
+  os_flavor               = "linux"
+  linux_distribution_name = "ubuntu2004"
+  virtual_machine_size    = "Standard_B2s"
+  generate_admin_ssh_key  = true
+  instances_count         = 2
+
+  # Network Seurity group port allow definitions for each Virtual Machine
+  # NSG association to be added automatically for all network interfaces.  
+  existing_virtual_network_resource_group_name = data.azurerm_virtual_network.example.resource_group_name
+  existing_network_security_group_name         = data.azurerm_network_security_group.example.name
+
+# .... omitted for bravity
+
+}
+```
+
+## Using existing Network Security Groups
 
 To maintain capabilities, enterprise environments require the utilization of pre-existing NSG groups. This module facilitates the use of existing network security groups. Set the input `existing_network_security_group_name` to use a valid NSG resource name.
 
