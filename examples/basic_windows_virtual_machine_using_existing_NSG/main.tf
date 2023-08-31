@@ -14,7 +14,7 @@ module "mod_virtual_machine" {
 
   # Resource Group, location, VNet and Subnet details
   # Resource Group, location, VNet and Subnet details
-  existing_resource_group_name = azurerm_resource_group.windows-vm-rg.name
+  existing_resource_group_name = azurerm_resource_group.windows-rg.name
   location                     = var.location
   deploy_environment           = var.deploy_environment
   org_name                     = var.org_name
