@@ -9,6 +9,7 @@ This module requires you to use an existing NSG group. To enable this functional
 ```terraform
 # Azurerm provider configuration
 provider "azurerm" {
+  environment = "usgovernment"
   features {}
 }
 
