@@ -153,7 +153,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 #---------------------------------------
 resource "azurerm_windows_virtual_machine" "win_vm" {
   count                        = var.os_type == "windows" ? var.instances_count : 0
-  name                         = var.instances_count == 1 ? substr(local.windows_vm_name, 0, 15) : substr(format("%s%s", lower(replace(local.windows_vm_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 15)
+  name                         = var.instances_count == 1 ? substr(local.windows_vm_name, 0, 24) : substr(format("%s%s", lower(replace(local.windows_vm_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 24)
   computer_name                = var.instances_count == 1 ? substr(local.windows_computer_name, 0, 15) : substr(format("%s%s", lower(replace(local.windows_computer_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 15)
   location                     = local.location
   resource_group_name          = local.resource_group_name

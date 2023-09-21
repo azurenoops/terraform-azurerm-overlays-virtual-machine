@@ -4,7 +4,7 @@
 #---------------------------------------
 # Virtual machine AAD Login
 #---------------------------------------
-resource "azurerm_virtual_machine_extension" "linux_aad_login" {
+resource "azurerm_virtual_machine_extension" "linux_aad_ssh_login" {
   count                      = var.aad_login_enabled && var.os_type == "linux" ? var.instances_count : 0
   name                       = "${local.linux_vm_name}-AADLoginForLinux"
   publisher                  = "Microsoft.Azure.ActiveDirectory"
