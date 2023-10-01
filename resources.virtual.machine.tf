@@ -80,6 +80,9 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   location                        = local.location
   resource_group_name             = local.resource_group_name
   size                            = var.virtual_machine_size
+  priority                        = var.use_spot_instances ? "Spot": "Regular"
+  eviction_policy                 = var.use_spot_instances ? var.vm_eviction_policy : null
+  max_bid_price                   = var.use_spot_instances ? var.max_bid_price : null
   admin_username                  = var.admin_username
   admin_password                  = var.disable_password_authentication == false && var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
   disable_password_authentication = var.disable_password_authentication
@@ -158,6 +161,9 @@ resource "azurerm_windows_virtual_machine" "win_vm" {
   location                     = local.location
   resource_group_name          = local.resource_group_name
   size                         = var.virtual_machine_size
+  priority                     = var.use_spot_instances ? "Spot": "Regular"
+  eviction_policy              = var.use_spot_instances ? var.vm_eviction_policy : null
+  max_bid_price                = var.use_spot_instances ? var.max_bid_price : null
   admin_username               = var.admin_username
   admin_password               = var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
   network_interface_ids        = [element(concat(azurerm_network_interface.nic.*.id, [""]), count.index)]
