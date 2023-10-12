@@ -19,9 +19,6 @@ locals {
     data_disk : data_disk,
     }
   }
-
-  admin_password_encoded = replace(replace(replace(replace(replace(var.admin_password, "&[^#]", "&#38;"), ">", "&#62;"), "<", "&#60;"), "'", "&#39;"), "\"", "&#34;")
-
 }
 
 #---------------------------------
