@@ -85,6 +85,28 @@ variable "admin_ssh_key_data" {
   default     = null
 }
 
+variable "use_spot_instances" {
+  description = "Should spot instances be used insted of regular VM. Default is false."
+  default = false
+  type = bool
+}
+
+variable "vm_eviction_policy" {
+  description = "Specifies what should happen when the Virtual Machine is evicted. Only relevant if use_spot_instances is set to true. Default is Delete."
+  type = string
+  default = "Delete"
+  validation {
+    condition     = contains(["delete", "deallocates"], lower(var.vm_eviction_policy))
+    error_message = "Allowed values for virtual_machine_eviction_policy are \"delete\" or \"deallocates\"."
+  }
+}
+
+variable "max_bid_price" {
+  type = number
+  description = "Specifies the maximum price that should be paid for this VM, in US Dollars. Only relevant if use_spot_instances is set to true. Default is -1, which means that the Virtual Machine should not be evicted for price reasons."
+  default = -1
+}
+
 ##############################
 # VM Network Configuration  ##
 ##############################
