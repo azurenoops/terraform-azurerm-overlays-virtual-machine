@@ -45,7 +45,7 @@ module "mod_virtual_machine" {
   enable_vm_availability_set       = true
   enable_public_ip_address         = true
 
-  # Network Seurity group port definitions for each Virtual Machine 
+  # Network Security group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
   # When 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
   existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
@@ -69,7 +69,7 @@ module "mod_virtual_machine" {
 
   # Attach a managed data disk to a Windows/Linux virtual machine. 
   # Storage account types include: #'Standard_LRS', #'StandardSSD_ZRS', #'Premium_LRS', #'Premium_ZRS', #'StandardSSD_LRS', #'UltraSSD_LRS' (UltraSSD_LRS is only accessible in regions that support availability zones).
-  # Create a new data drive - connect to the VM and execute diskmanagemnet or fdisk.
+  # Create a new data drive - connect to the VM and execute diskmanagement or fdisk.
   data_disks = [
     {
       name                 = "disk1"
@@ -95,7 +95,7 @@ module "mod_virtual_machine" {
 
   # Adding additional TAG's to your Azure resources
   add_tags = {
-    Exmaple  = "basic_linux_virtual_machine_using_existing_RG"   
+    Example  = "basic_linux_virtual_machine_using_existing_RG"   
   }
 }
 ```

@@ -49,7 +49,7 @@ module "mod_virtual_machine" {
   enable_vm_availability_set       = true
   enable_public_ip_address         = true
 
-  # Network Seurity group port allow definitions for each Virtual Machine
+  # Network Security group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.
   # When 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
   existing_network_security_group_name = azurerm_network_security_group.windows-nsg.name
@@ -74,7 +74,7 @@ module "mod_virtual_machine" {
   # Attach a managed data disk to a Windows/windows VM's. Possible Storage account type are: 
   # `Standard_LRS`, `StandardSSD_ZRS`, `Premium_LRS`, `Premium_ZRS`, `StandardSSD_LRS`
   # or `UltraSSD_LRS` (UltraSSD_LRS only available in a region that support availability zones)
-  # Initialize a new data disk - you need to connect to the VM and run diskmanagemnet or fdisk
+  # Initialize a new data disk - you need to connect to the VM and run diskmanagement or fdisk
   data_disks = [
     {
       name                 = "disk1"
@@ -100,7 +100,7 @@ module "mod_virtual_machine" {
 
   # Adding additional TAG's to your Azure resources
   add_tags = {
-    Exmaple = "basic_windows_virtual_machine_using_existing_RG"
+    Example = "basic_windows_virtual_machine_using_existing_RG"
   }
 }
 ```

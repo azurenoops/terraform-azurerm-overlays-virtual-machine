@@ -25,6 +25,6 @@ output "network_security_group_ids" {
 }
 
 output "vm_availability_set_id" {
-  description = "The resource ID of Virtual Machine avilability set"
+  description = "The resource ID of Virtual Machine availability set"
   value       = module.mod_virtual_machine.vm_availability_set_id
 }
