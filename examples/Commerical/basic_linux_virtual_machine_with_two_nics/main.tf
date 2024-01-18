@@ -38,14 +38,16 @@ module "mod_virtual_machine" {
   disable_password_authentication = false
   admin_username                  = "azureadmin"
   admin_password                  = "P@$$w0rd1234!"
-  instances_count                 = 2 # Number of VM's to be deployed
+  instances_count                 = 1 # Number of VM's to be deployed
 
-  # The proximity placement group, Availability Set, and assigning a public IP address to VMs are all optional.
-  # If you don't wish to utilize these arguments, delete them from the module. 
-  enable_proximity_placement_group   = true
-  enable_vm_availability_set         = true
+
   private_ip_address_allocation_type = "Static" # Static or Dynamic
-  private_ip_address                 = ["10.0.1.36", "10.0.1.37"]
+  private_ip_address                 = ["10.0.1.36"]
+
+  additional_nic_configuration = {
+    subnet_id          = azurerm_subnet.temp-snet.id
+    private_ip_address = "192.168.1.10"
+  }
 
   # Network Security group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
@@ -63,49 +65,8 @@ module "mod_virtual_machine" {
     },
   ]
 
-  # Boot diagnostics are used to troubleshoot virtual machines by default. 
-  # To use a custom storage account, supply a valid name for'storage_account_name'. 
-  # Passing a 'null' value will use a Managed Storage Account to store Boot Diagnostics.
-  enable_boot_diagnostics = true
-
-  # Attach a managed data disk to a Windows/Linux virtual machine. 
-  # Storage account types include: #'Standard_LRS', #'StandardSSD_ZRS', #'Premium_LRS', #'Premium_ZRS', #'StandardSSD_LRS', #'UltraSSD_LRS' (UltraSSD_LRS is only accessible in regions that support availability zones).
-  # Create a new data drive - connect to the VM and execute diskmanagement or fdisk.
-  data_disks = [
-    {
-      name                 = "disk1"
-      disk_size_gb         = 100
-      storage_account_type = "StandardSSD_LRS"
-    },
-    {
-      name                 = "disk2"
-      disk_size_gb         = 200
-      storage_account_type = "Standard_LRS"
-    }
-  ]
-
-  # AAD Login is used to login to the VM using Azure Active Directory credentials.
-  /* aad_login_enabled = true
-  aad_login_user_objects_ids = [
-    data.azuread_group.vm_users_group.object_id
-  ]
-
-  aad_login_admin_objects_ids = [
-    data.azuread_group.vm_admins_group.object_id
-  ] */
-
-  # (Optional) To activate Azure Monitoring and install log analytics agents 
-  # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.linux-log.id
-
-  # Deploy log analytics agents on a virtual machine. 
-  # Customer id and primary shared key for Log Analytics workspace are required.
-  deploy_log_analytics_agent                 = true
-  log_analytics_customer_id                  = azurerm_log_analytics_workspace.linux-log.workspace_id
-  log_analytics_workspace_primary_shared_key = azurerm_log_analytics_workspace.linux-log.primary_shared_key
-
   # Adding additional TAG's to your Azure resources
   add_tags = {
-    Example = "basic_linux_virtual_machine_using_existing_RG"
+    Example = "basic_linux_virtual_machine_using_marketplace_image"
   }
 }

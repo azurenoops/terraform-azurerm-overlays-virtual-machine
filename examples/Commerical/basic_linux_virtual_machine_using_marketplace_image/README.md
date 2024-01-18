@@ -1,29 +1,30 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+# Azure Linux virtual Machine Overlay Terraform Module
 
-# Terraform module for deploying a basic Linux Virtual Machine in Azure. 
+This terraform overlay module is intended for the deployment of Azure virtual machines(Linux) with Public IP, proximity placement group, Availability Set, boot diagnostics, data disks, and Network Security Group support. It allows you to use current SSH keys or generate new ones if necessary.
+
+This module requires you to use an existing NSG group. To enable this functionality, replace the input 'existing_network_security_group_name' with the current NSG group's valid resource name and you can use NSG inbound rules from the module.
+
+## Module Usage to create Linux Virtual machine with optional resources
+
+```terraform
+# Azurerm provider configuration
+provider "azurerm" {
+  environment = "usgovernment"
+  features {}
+}
 
 module "mod_virtual_machine" {
-  #source  = "azurenoops/overlays-virtual-machine/azurerm"
-  #version = "x.x.x"
-  source = "../../.."
-
-  depends_on = [
-    azurerm_log_analytics_workspace.linux-log,
-  ]
+  source  = "azurenoops/overlays-virtual-machine/azurerm"
+  version = "x.x.x"
 
   # Resource Group, location, VNet and Subnet details
-  existing_resource_group_name = azurerm_resource_group.linux-vm-rg.name
-  location                     = var.location
-  deploy_environment           = var.deploy_environment
-  org_name                     = var.org_name
-  workload_name                = var.workload_name
-
-  # Lookup Network Information for VM deployment
-  existing_virtual_network_resource_group_name = azurerm_virtual_network.linux-vnet.resource_group_name
-  existing_virtual_network_name                = azurerm_virtual_network.linux-vnet.name
-  existing_subnet_name                         = azurerm_subnet.linux-snet.name
-  existing_network_security_group_name         = azurerm_network_security_group.linux-nsg.name
+  resource_group_name  = azurerm_resource_group.linux-rg.name
+  location             = var.location
+  environment          = var.environment
+  org_name             = var.org_name
+  workload_name        = var.workload_name
+  virtual_network_name = azurerm_virtual_network.linux-vnet.name
+  subnet_name          = azurerm_subnet.linux-snet.name
 
   # This module supports a variety of pre-configured Linux and Windows distributions.
   # See the README.md file for more pre-defined Ubuntu, Centos, and RedHat images.
@@ -32,24 +33,22 @@ module "mod_virtual_machine" {
   # To use your own password, specify a valid password with the 'admin_password' parameter 
   # To produce an SSH key pair, specify 'generate_admin_ssh_key = true'
   # To use an existing key pair, set 'admin_ssh_key_data' to the path of a valid SSH public key.  
-  os_type                         = "linux"
-  linux_distribution_name         = "ubuntu2004"
-  virtual_machine_size            = "Standard_B2s"
-  disable_password_authentication = false
-  admin_username                  = "azureadmin"
-  admin_password                  = "P@$$w0rd1234!"
-  instances_count                 = 2 # Number of VM's to be deployed
+  os_type                 = "linux"
+  linux_distribution_name = "ubuntu2004"
+  virtual_machine_size    = "Standard_B2s"
+  generate_admin_ssh_key  = true
+  instances_count         = 2 # Number of VM's to be deployed
 
   # The proximity placement group, Availability Set, and assigning a public IP address to VMs are all optional.
   # If you don't wish to utilize these arguments, delete them from the module. 
-  enable_proximity_placement_group   = true
-  enable_vm_availability_set         = true
-  private_ip_address_allocation_type = "Static" # Static or Dynamic
-  private_ip_address                 = ["10.0.1.36", "10.0.1.37"]
+  enable_proximity_placement_group = true
+  enable_vm_availability_set       = true
+  enable_public_ip_address         = true
 
   # Network Security group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
-  # If 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
+  # When 'existing_network_security_group_name' is supplied, the module will use the existing NSG.
+  existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
   nsg_inbound_rules = [
     {
       name                   = "ssh"
@@ -84,18 +83,8 @@ module "mod_virtual_machine" {
     }
   ]
 
-  # AAD Login is used to login to the VM using Azure Active Directory credentials.
-  /* aad_login_enabled = true
-  aad_login_user_objects_ids = [
-    data.azuread_group.vm_users_group.object_id
-  ]
-
-  aad_login_admin_objects_ids = [
-    data.azuread_group.vm_admins_group.object_id
-  ] */
-
-  # (Optional) To activate Azure Monitoring and install log analytics agents 
-  # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
+ # (Optional) To activate Azure Monitoring and install log analytics agents 
+ # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
   log_analytics_workspace_id = azurerm_log_analytics_workspace.linux-log.id
 
   # Deploy log analytics agents on a virtual machine. 
@@ -106,6 +95,19 @@ module "mod_virtual_machine" {
 
   # Adding additional TAG's to your Azure resources
   add_tags = {
-    Example = "basic_linux_virtual_machine_using_existing_RG"
+    Example  = "basic_linux_virtual_machine_using_existing_RG"   
   }
 }
+```
+
+## Terraform Usage
+
+To run this example you need to execute following Terraform commands
+
+```hcl
+terraform init
+terraform plan
+terraform apply
+```
+
+Run `terraform destroy` when you don't need these resources.

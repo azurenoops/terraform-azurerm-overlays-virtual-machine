@@ -87,14 +87,14 @@ variable "admin_ssh_key_data" {
 
 variable "use_spot_instances" {
   description = "Should spot instances be used insted of regular VM. Default is false."
-  default = false
-  type = bool
+  default     = false
+  type        = bool
 }
 
 variable "vm_eviction_policy" {
   description = "Specifies what should happen when the Virtual Machine is evicted. Only relevant if use_spot_instances is set to true. Default is Delete."
-  type = string
-  default = "Delete"
+  type        = string
+  default     = "Delete"
   validation {
     condition     = contains(["delete", "deallocates"], lower(var.vm_eviction_policy))
     error_message = "Allowed values for virtual_machine_eviction_policy are \"delete\" or \"deallocates\"."
@@ -102,9 +102,9 @@ variable "vm_eviction_policy" {
 }
 
 variable "max_bid_price" {
-  type = number
+  type        = number
   description = "Specifies the maximum price that should be paid for this VM, in US Dollars. Only relevant if use_spot_instances is set to true. Default is -1, which means that the Virtual Machine should not be evicted for price reasons."
-  default = -1
+  default     = -1
 }
 
 ##############################
@@ -124,6 +124,15 @@ variable "existing_virtual_network_name" {
 variable "existing_subnet_name" {
   description = "The name of the subnet to attach Subnet and NSG to VMs. It can be different from the VM resource group."
   default     = null
+}
+
+variable "additional_nic_configuration" {
+  description = "Additional configurations for a second network interface.  Secondary NIC always has a private IP address."
+  type = object({
+    subnet_id                     = string
+    private_ip_address            = string
+  })
+  default = null
 }
 
 ###########################
@@ -273,13 +282,23 @@ variable "nsg_inbound_rules" {
 #############################
 
 variable "custom_image" {
-  description = "Provide the custom image to this module if the default variants are not sufficient"
-  type = map(object({
+  description = "Provide the custom image to this module if the defaults provided in the linux_distribution_list or windows_distribution_list variables are not sufficient. You must also set the custom_image_plan variable."
+  type = object({
     publisher = string
     offer     = string
     sku       = string
     version   = string
-  }))
+  })
+  default = null
+}
+
+variable "custom_image_plan" {
+  description = "Virtual Machine custom image plan information. See https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine#plan. This variable has to be used for BYOS image. Before using BYOS image, you need to accept legal plan terms. See https://docs.microsoft.com/en-us/cli/azure/vm/image?view=azure-cli-latest#az_vm_image_accept_terms."
+  type = object({
+    name      = string
+    product   = string
+    publisher = string
+  })
   default = null
 }
 

@@ -54,22 +54,22 @@ output "linux_vm_password" {
 
 output "windows_vm_public_ips" {
   description = "Public IP's map for the all windows Virtual Machines"
-  value       = var.enable_public_ip_address == true && var.os_type == "windows" ? zipmap(azurerm_windows_virtual_machine.win_vm.*.name, azurerm_windows_virtual_machine.win_vm.*.public_ip_address) : null
+  value       = var.enable_public_ip_address == true && var.os_type == "windows" ? zipmap(azurerm_windows_virtual_machine.win_vm.*.name, azurerm_windows_virtual_machine.win_vm.*.public_ip_addresses) : null
 }
 
 output "windows_vm_private_ips" {
   description = "Public IP's map for the all windows Virtual Machines"
-  value       = var.os_type == "windows" ? zipmap(azurerm_windows_virtual_machine.win_vm.*.name, azurerm_windows_virtual_machine.win_vm.*.private_ip_address) : null
+  value       = var.os_type == "windows" ? zipmap(azurerm_windows_virtual_machine.win_vm.*.name, azurerm_windows_virtual_machine.win_vm.*.private_ip_addresses) : null
 }
 
 output "linux_vm_public_ips" {
   description = "Public IP's map for the all windows Virtual Machines"
-  value       = var.enable_public_ip_address == true && var.os_type == "linux" ? zipmap(azurerm_linux_virtual_machine.linux_vm.*.name, azurerm_linux_virtual_machine.linux_vm.*.public_ip_address) : null
+  value       = var.enable_public_ip_address == true && var.os_type == "linux" ? zipmap(azurerm_linux_virtual_machine.linux_vm.*.name, azurerm_linux_virtual_machine.linux_vm.*.public_ip_addresses) : null
 }
 
 output "linux_vm_private_ips" {
   description = "Public IP's map for the all windows Virtual Machines"
-  value       = var.os_type == "linux" ? zipmap(azurerm_linux_virtual_machine.linux_vm.*.name, azurerm_linux_virtual_machine.linux_vm.*.private_ip_address) : null
+  value       = var.os_type == "linux" ? zipmap(azurerm_linux_virtual_machine.linux_vm.*.name, azurerm_linux_virtual_machine.linux_vm.*.private_ip_addresses) : null
 }
 
 output "linux_virtual_machine_ids" {

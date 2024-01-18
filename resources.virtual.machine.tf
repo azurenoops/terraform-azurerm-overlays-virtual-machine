@@ -75,28 +75,30 @@ resource "azurerm_availability_set" "aset" {
 # Linux Virutal machine
 #---------------------------------------
 resource "azurerm_linux_virtual_machine" "linux_vm" {
+  depends_on                      = [azurerm_network_interface_security_group_association.nsgassoc]
   count                           = var.os_type == "linux" ? var.instances_count : 0
   name                            = var.instances_count == 1 ? substr(local.linux_vm_name, 0, 64) : substr(format("%s%s", lower(replace(local.linux_vm_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 64)
   location                        = local.location
   resource_group_name             = local.resource_group_name
   size                            = var.virtual_machine_size
-  priority                        = var.use_spot_instances ? "Spot": "Regular"
+  priority                        = var.use_spot_instances ? "Spot" : "Regular"
   eviction_policy                 = var.use_spot_instances ? var.vm_eviction_policy : null
   max_bid_price                   = var.use_spot_instances ? var.max_bid_price : null
   admin_username                  = var.admin_username
   admin_password                  = var.disable_password_authentication == false && var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
   disable_password_authentication = var.disable_password_authentication
-  network_interface_ids           = [element(concat(azurerm_network_interface.nic.*.id, [""]), count.index)]
-  source_image_id                 = var.source_image_id != null ? var.source_image_id : null
-  provision_vm_agent              = true
-  allow_extension_operations      = true
-  dedicated_host_id               = var.dedicated_host_id
-  custom_data                     = var.custom_data != null ? var.custom_data : null
-  availability_set_id             = var.enable_vm_availability_set == true ? element(concat(azurerm_availability_set.aset.*.id, [""]), 0) : null
-  encryption_at_host_enabled      = var.enable_encryption_at_host
-  proximity_placement_group_id    = var.enable_proximity_placement_group ? azurerm_proximity_placement_group.appgrp.0.id : null
-  zone                            = var.vm_availability_zone
-  tags                            = merge({ "ResourceName" = var.instances_count == 1 ? local.linux_vm_name : format("%s%s", lower(replace(local.linux_vm_name, "/[[:^alnum:]]/", "")), count.index + 1) }, var.add_tags, )
+  network_interface_ids = compact([element(concat(azurerm_network_interface.nic.*.id, [""]), count.index),
+                           var.additional_nic_configuration != null ? element(concat(azurerm_network_interface.secondary_nic.*.id, [""]), count.index) : null])
+  source_image_id              = var.source_image_id != null ? var.source_image_id : null
+  provision_vm_agent           = true
+  allow_extension_operations   = true
+  dedicated_host_id            = var.dedicated_host_id
+  custom_data                  = var.custom_data != null ? var.custom_data : null
+  availability_set_id          = var.enable_vm_availability_set == true ? element(concat(azurerm_availability_set.aset.*.id, [""]), 0) : null
+  encryption_at_host_enabled   = var.enable_encryption_at_host
+  proximity_placement_group_id = var.enable_proximity_placement_group ? azurerm_proximity_placement_group.appgrp.0.id : null
+  zone                         = var.vm_availability_zone
+  tags                         = merge({ "ResourceName" = var.instances_count == 1 ? local.linux_vm_name : format("%s%s", lower(replace(local.linux_vm_name, "/[[:^alnum:]]/", "")), count.index + 1) }, var.add_tags, )
 
   dynamic "admin_ssh_key" {
     for_each = var.disable_password_authentication ? [1] : []
@@ -109,10 +111,19 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   dynamic "source_image_reference" {
     for_each = var.source_image_id != null ? [] : [1]
     content {
-      publisher = var.custom_image != null ? var.custom_image["publisher"] : var.linux_distribution_list[lower(var.linux_distribution_name)]["publisher"]
-      offer     = var.custom_image != null ? var.custom_image["offer"] : var.linux_distribution_list[lower(var.linux_distribution_name)]["offer"]
-      sku       = var.custom_image != null ? var.custom_image["sku"] : var.linux_distribution_list[lower(var.linux_distribution_name)]["sku"]
-      version   = var.custom_image != null ? var.custom_image["version"] : var.linux_distribution_list[lower(var.linux_distribution_name)]["version"]
+      publisher = var.custom_image != null ? lookup(var.custom_image, "publisher", null) : var.linux_distribution_list[lower(var.linux_distribution_name)]["publisher"]
+      offer     = var.custom_image != null ? lookup(var.custom_image, "offer", null) : var.linux_distribution_list[lower(var.linux_distribution_name)]["offer"]
+      sku       = var.custom_image != null ? lookup(var.custom_image, "sku", null) : var.linux_distribution_list[lower(var.linux_distribution_name)]["sku"]
+      version   = var.custom_image != null ? lookup(var.custom_image, "version", null) : var.linux_distribution_list[lower(var.linux_distribution_name)]["version"]
+    }
+  }
+
+  dynamic "plan" {
+    for_each = toset(var.custom_image_plan != null ? ["fake"] : [])
+    content {
+      name      = var.custom_image_plan.name
+      product   = var.custom_image_plan.product
+      publisher = var.custom_image_plan.publisher
     }
   }
 
@@ -161,7 +172,7 @@ resource "azurerm_windows_virtual_machine" "win_vm" {
   location                     = local.location
   resource_group_name          = local.resource_group_name
   size                         = var.virtual_machine_size
-  priority                     = var.use_spot_instances ? "Spot": "Regular"
+  priority                     = var.use_spot_instances ? "Spot" : "Regular"
   eviction_policy              = var.use_spot_instances ? var.vm_eviction_policy : null
   max_bid_price                = var.use_spot_instances ? var.max_bid_price : null
   admin_username               = var.admin_username
