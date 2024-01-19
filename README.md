@@ -166,6 +166,11 @@ MS SQL 2019 Bring your own License (BOYL)|`mssql2019ent-byol`, `mssql2019std-byo
 
 If the pre-defined Windows or Linux variations are insufficient, you can supply a custom image by configuring the 'custom_image' option with appropriate values. Bootstrapping configurations such as preloading apps, application setups, and other OS customizations can all be done with custom images. More information can be found here.(<https://docs.microsoft.com/en-us/azure/virtual-machines/linux/tutorial-custom-images>)
 
+#### Licensed Marketplace Images
+For some Marketplace images you will need to provide a 'custom_image_plan' object and accept the license terms. For more information on the please see the `plan` block documentation at https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine#plan.  
+
+Before using licensed Marketplace image, you may need to accept legal plan terms using the Powershell command found at https://learn.microsoft.com/en-us/cli/azure/vm/image/terms?view=azure-cli-latest#az-vm-image-terms-accept.  The response from this command will provide the values needed for the `custom_image_plan` object.
+
 ```terraform
 module "virtual-machine" {
   source  = "azurenoops/overlays-virtual-machine/azurerm"
@@ -179,12 +184,19 @@ module "virtual-machine" {
   generate_admin_ssh_key  = true
   instances_count         = 2
 
+ os_type = "linux"
   custom_image = {
-      publisher = "myPublisher"
-      offer     = "myOffer"
-      sku       = "mySKU"
-      version   = "latest"
-    }
+    publisher = "paloaltonetworks"
+    offer     = "panorama"
+    sku       = "byol"
+    version   = "latest"
+  }
+
+  custom_image_plan = {
+    publisher = "paloaltonetworks"
+    product   = "panorama"
+    name      = "byol"
+  }
 
 # .... omitted 
 
@@ -378,6 +390,7 @@ An effective naming convention creates resource names by incorporating vital res
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_additional_nic_configuration"></a> [additional\_nic_configuration](#input\_additional\_nic\_configuration) | The configuration information used when a second NIC needs to be added to the VM. | <pre>object({<br>  subnet_id = string<br>  private_ip_address = string<br>})</pre> | `null` | no |
 | <a name="input_add_tags"></a> [add\_tags](#input\_add\_tags) | Extra tags to set on each created resource. | `map(string)` | `{}` | no |
 | <a name="input_additional_unattend_content"></a> [additional\_unattend\_content](#input\_additional\_unattend\_content) | The XML formatted content that is added to the unattend.xml file for the specified path and component. | `any` | `null` | no |
 | <a name="input_additional_unattend_content_setting"></a> [additional\_unattend\_content\_setting](#input\_additional\_unattend\_content\_setting) | The name of the setting to which the content applies. Possible values are `AutoLogon` and `FirstLogonCommands` | `any` | `null` | no |
@@ -393,6 +406,7 @@ An effective naming convention creates resource names by incorporating vital res
 | <a name="input_custom_data"></a> [custom\_data](#input\_custom\_data) | Base64 encoded file of a bash script that gets run once by cloud-init upon VM creation | `any` | `null` | no |
 | <a name="input_custom_dcr_name"></a> [custom\_dcr\_name](#input\_custom\_dcr\_name) | Custom name for Data collection rule association | `string` | `null` | no |
 | <a name="input_custom_image"></a> [custom\_image](#input\_custom\_image) | Provide the custom image to this module if the default variants are not sufficient | <pre>map(object({<br>    publisher = string<br>    offer     = string<br>    sku       = string<br>    version   = string<br>  }))</pre> | `null` | no |
+| <a name="input_custom_image_plan"></a> [custom\_image\_plan](#input\_custom\_image\_plan) | Provide the custom image plan to this module if the custom image selected is a licensed Marketplace image | <pre>object({<br>  name = string<br>  product = string<br>  publisher = string<br>})</pre> | `null` | no |
 | <a name="input_custom_ipconfig_name"></a> [custom\_ipconfig\_name](#input\_custom\_ipconfig\_name) | Custom name for the IP config of the NIC. Generated if not set. | `string` | `null` | no |
 | <a name="input_custom_linux_vm_name"></a> [custom\_linux\_vm\_name](#input\_custom\_linux\_vm\_name) | Custom name for the Linux Virtual Machine. Generated if not set. | `string` | `""` | no |
 | <a name="input_custom_nic_name"></a> [custom\_nic\_name](#input\_custom\_nic\_name) | Custom name for the NIC interface. Generated if not set. | `string` | `null` | no |
