@@ -45,7 +45,7 @@ resource "azurerm_network_interface" "secondary_nic" {
 
   ip_configuration {
     name                          = lower("ipconfig-${format("%s%s", lower(replace(local.secondary_ip_configuration_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
-    primary                       = false
+    primary                       = true
     subnet_id                     = lookup(var.additional_nic_configuration, "subnet_id", null)
     private_ip_address_allocation = "Static"
     private_ip_address            = lookup(var.additional_nic_configuration, "private_ip_address", null)
