@@ -104,7 +104,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     for_each = var.disable_password_authentication ? [1] : []
     content {
       username   = var.admin_username
-      public_key = var.admin_ssh_key_data == null ? tls_private_key.rsa[0].public_key_openssh : file(var.admin_ssh_key_data)
+      public_key = var.admin_ssh_key_data == null ? tls_private_key.rsa[0].public_key_openssh : var.admin_ssh_key_data
     }
   }
 
