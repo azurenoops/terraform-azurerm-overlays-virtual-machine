@@ -102,3 +102,7 @@ output "windows_vm_identity" {
   value       = var.os_type == "windows" ? azurerm_windows_virtual_machine.win_vm.*.identity : null
 }
 
+output "custom_boot_image" {
+  description = "The custom image object"
+  value       = azurerm_managed_disk.custom_boot_image
+}
