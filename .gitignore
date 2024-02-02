@@ -73,6 +73,7 @@ override.tf.json
 #
 !examples/**/main.tf
 !examples/**/terraform.tfvars
+!examples/**/parameters.tfvars
 
 # Exclude tests files you do wish to add to version control using negated pattern
 #
