@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-# Terraform module for deploying a basic Linux Virtual Machine in Azure. 
+# Terraform module for deploying a Custom VHD-based Virtual Machine in Azure. 
 
 module "mod_virtual_machine" {
-  #source  = "azurenoops/overlays-virtual-machine/azurerm"
-  #version = "x.x.x"
+  #source  = "azurenoops/overlays-custom-virtual-machine/azurerm"
+  #version = "~>0.9"
   source = "../../.."
 
   depends_on = [
@@ -13,7 +13,7 @@ module "mod_virtual_machine" {
   ]
 
   # Resource Group, location, VNet and Subnet details
-  existing_resource_group_name = azurerm_resource_group.linux-vm-rg.name
+  existing_resource_group_name = azurerm_resource_group.custom-vm-rg.name
   location                     = var.location
   deploy_environment           = var.deploy_environment
   org_name                     = var.org_name
@@ -31,9 +31,8 @@ module "mod_virtual_machine" {
   # To generate a random admin password, specify 'disable_password_authentication = false' 
   # To use your own password, specify a valid password with the 'admin_password' parameter 
   # To produce an SSH key pair, specify 'generate_admin_ssh_key = true'
-  # To use an existing key pair, set 'admin_ssh_key_data' to the path of a valid SSH public key.  
-  os_type = "linux"
-  custom_boot_image = {
+  # To use an existing key pair, set 'admin_ssh_key_data' to the contents of a valid SSH public key.  
+   custom_boot_image = {
     storage_uri       = "https://sandboxtakfiles.blob.core.windows.net/takvhd/takboot.vhd"
     storage_acct_id   = data.azurerm_storage_account.custom_image_storage_acct.id
     storage_acct_type = "StandardSSD_LRS"
@@ -75,6 +74,7 @@ module "mod_virtual_machine" {
   # To use a custom storage account, supply a valid name for'storage_account_name'. 
   # Passing a 'null' value will use a Managed Storage Account to store Boot Diagnostics.
   enable_boot_diagnostics = true
+  storage_account_name = azurerm_storage_account.boot_diagnostics_storage_acct.name
 
   # AAD Login is used to login to the VM using Azure Active Directory credentials.
   /* aad_login_enabled = true

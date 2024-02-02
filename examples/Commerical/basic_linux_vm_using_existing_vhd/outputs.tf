@@ -29,20 +29,13 @@ output "windows_vm_public_ips" {
   value       = module.mod_virtual_machine.windows_vm_public_ips
 }
 
-output "windows_vm_private_ips" {
-  description = "Public IP's map for the all windows Virtual Machines"
-  value       = module.mod_virtual_machine.windows_vm_private_ips
-}
 
 output "linux_vm_public_ips" {
   description = "Public IP's map for the all windows Virtual Machines"
   value       = module.mod_virtual_machine.linux_vm_public_ips
 }
 
-output "linux_vm_private_ips" {
-  description = "Public IP's map for the all windows Virtual Machines"
-  value       = module.mod_virtual_machine.linux_vm_private_ips
-}
+
 
 output "linux_virtual_machine_ids" {
   description = "The resource id's of all Linux Virtual Machine."

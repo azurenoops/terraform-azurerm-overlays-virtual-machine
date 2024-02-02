@@ -17,8 +17,8 @@ data "azuread_group" "vm_users_group" {
   }
 }
 
-resource "azurerm_resource_group" "linux-vm-rg" {
-  name     = "linux-vm-rg"
+resource "azurerm_resource_group" "custom-vm-rg" {
+  name     = "custom-vm-rg"
   location = var.location
   tags = {
     environment = "test"
