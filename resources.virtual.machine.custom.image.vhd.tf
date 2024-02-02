@@ -1,6 +1,6 @@
 
 resource "azurerm_managed_disk" "custom_boot_image" {
-  count                = var.custom_boot_image != null ? 1 : 0
+  count                = var.instances_count
   name                 = local.vm_os_disk_name
   location             = local.location
   resource_group_name  = local.resource_group_name

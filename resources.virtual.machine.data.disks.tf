@@ -24,7 +24,7 @@ resource "azurerm_managed_disk" "data_disk" {
 resource "azurerm_virtual_machine_data_disk_attachment" "data_disk" {
   for_each           = local.vm_data_disks
   managed_disk_id    = azurerm_managed_disk.data_disk[each.key].id
-  virtual_machine_id = var.os_type == "windows" ? azurerm_windows_virtual_machine.win_vm[0].id : azurerm_linux_virtual_machine.linux_vm[0].id
+  virtual_machine_id = azurerm_virtual_machine.custom_vm[0].id
   lun                = each.value.idx
   caching            = "ReadWrite"
 }

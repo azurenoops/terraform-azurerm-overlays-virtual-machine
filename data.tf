@@ -32,7 +32,7 @@ data "azurerm_storage_account" "storeacc" {
 }
 
 resource "random_password" "passwd" {
-  count       = (var.os_type == "linux" && var.disable_password_authentication == false && var.admin_password == null ? 1 : (var.os_type == "windows" && var.admin_password == null ? 1 : 0))
+  count       = (var.custom_boot_image.os_type == "linux" && var.disable_password_authentication == false && var.admin_password == null ? 1 : (var.custom_boot_image.os_type == "windows" && var.admin_password == null ? 1 : 0))
   length      = var.random_password_length
   min_upper   = 4
   min_lower   = 2
@@ -40,6 +40,6 @@ resource "random_password" "passwd" {
   special     = false
 
   keepers = {
-    admin_password = (var.os_type == "linux" ? local.linux_vm_name : (var.os_type == "windows" ? local.windows_vm_name : null))
+    admin_password = (var.custom_boot_image.os_type == "linux" ? local.linux_vm_name : (var.custom_boot_image.os_type == "windows" ? local.windows_vm_name : null))
   }
 }
