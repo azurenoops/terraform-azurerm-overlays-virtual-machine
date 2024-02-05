@@ -2,9 +2,24 @@
 
 [![Changelog](https://img.shields.io/badge/changelog-release-green.svg)](CHANGELOG.md) [![Notice](https://img.shields.io/badge/notice-copyright-yellow.svg)](NOTICE) [![MIT License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE) [![TF Registry](https://img.shields.io/badge/terraform-registry-blue.svg)](https://registry.terraform.io/modules/azurenoops/overlays-virtual-machine/azurerm/)
 
-This Overlay Terraform module can deploy Azure Windows or Linux virtual machines with support for Public IP, proximity placement group, Availability Set, boot diagnostics, data disks, and Network Security Group. It supports existing ssh keys and produces ssh key pairs for Linux VMs as needed. If you do not provide a special password for Windows VMs it generates random passwords. This module can be utilized in a [SCCA compliant network](https://registry.terraform.io/modules/azurenoops/overlays-hubspoke/azurerm/latest).
+This Overlay Terraform module can deploy Azure Windows or Linux virtual machines based on a custom VHD image that is retrieved from a Storage Account,  The resulting VM has support for Public IP, proximity placement group, Availability Set, boot diagnostics, data disks, and Network Security Group. It supports existing ssh keys and produces ssh key pairs for Linux VMs as needed. If you do not provide a special password for Windows VMs it generates random passwords. This module can be utilized in a [SCCA compliant network](https://registry.terraform.io/modules/azurenoops/overlays-hubspoke/azurerm/latest).
 
 This module requires you to use an existing NSG group. To enable this functionality, replace the input 'existing_network_security_group_name' with the current NSG group's valid resource name and you can use NSG inbound rules from the module.
+
+## Important Notes
+
+- The current version (v0.9) has an issue that appears when the VHD has already been configured with an SSH key.  The module creates the VM from the VHD, but the existing SSH key no longer works. The examples deploy the VM with a VM Admin Password and that works to access the VM. If you need SSH Key access then you will need to go into the Virtual Machine's settings in the Azure Portal to reset the SSH key using the _Reset Password_ option in the _Help_ section.
+
+- This Overlay is based on the _deprecated_ `azurerm_virtual_machine` module because the newer `azurerm_linux_virtual_machine` and `azurerm_windows_virtual_machine` modules do not currently support custom boot images.  When the newer `azurerm` modules support custom boot images, the [`overlays-virtual-machine`](https://registry.terraform.io/modules/azurenoops/overlays-virtual-machine/azurerm/latest) Azure NoOps Overlay module will be updated to handle custom boot images and this Overlay module will be deprecated. 
+
+## Pre-Defined Windows and Linux VM Images
+
+This module should not be used to deploy pre-defined Windows or Linux images. Please use the Azure NoOps [`overlays-virtual-machine`](https://registry.terraform.io/modules/azurenoops/overlays-virtual-machine/azurerm/latest) module instead.
+
+## Marketplace Virtual Machine images
+
+This module should not be used to deploy images from the Azure Marketplace. Please use the Azure NoOps [`overlays-virtual-machine`](https://registry.terraform.io/modules/azurenoops/overlays-virtual-machine/azurerm/latest) module instead.
+
 
 ## SCCA Compliance
 
@@ -24,7 +39,7 @@ More details are available in the [CONTRIBUTING.md](./CONTRIBUTING.md#pull-reque
 * [Windows Virtual Machine](https://www.terraform.io/docs/providers/azurerm/r/windows_virtual_machine.html)
 * [Linux VM with SQL Server](https://docs.microsoft.com/en-us/azure/azure-sql/virtual-machines/linux/sql-vm-create-portal-quickstart)
 * [Windows VM with SQL Server](https://docs.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/sql-vm-create-portal-quickstart)
-* [Managed Data Disks](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk)
+* [Managed OS & Data Disks](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk)
 * [Boot Diagnostics](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine#boot_diagnostics)
 * [Proximity Placement Group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/proximity_placement_group)
 * [Availability Set](https://www.terraform.io/docs/providers/azurerm/r/availability_set.html)
@@ -45,9 +60,11 @@ provider "azurerm" {
   features {}
 }
 
+# Terraform module for deploying a Custom VHD-based Virtual Machine in Azure. 
+
 module "mod_virtual_machine" {
-  source  = "azurenoops/overlays-virtual-machine/azurerm"
-  version = "x.x.x"
+  source  = "azurenoops/overlays-custom-virtual-machine/azurerm"
+  version = "~>0.9"
 
   # Resource Group, location, VNet and Subnet details
   existing_resource_group_name = azurerm_resource_group.custom-vm-rg.name
@@ -62,27 +79,27 @@ module "mod_virtual_machine" {
   existing_subnet_name                         = azurerm_subnet.linux-snet.name
   existing_network_security_group_name         = azurerm_network_security_group.linux-nsg.name
 
-  # This module supports a variety of pre-configured Linux and Windows distributions.
-  # See the README.md file for more pre-defined Ubuntu, Centos, and RedHat images.
-  # If you use gen2 distributions, please use gen2 images with supported VM sizes.
-  # To generate a random admin password, specify 'disable_password_authentication = false' 
-  # To use your own password, specify a valid password with the 'admin_password' parameter 
-  # To produce an SSH key pair, specify 'generate_admin_ssh_key = true'
-  # To use an existing key pair, set 'admin_ssh_key_data' to the path of a valid SSH public key.  
-  os_type                         = "linux"
-  linux_distribution_name         = "ubuntu2004"
+  custom_boot_image = {
+    storage_uri       = "https://sandboxtakfiles.blob.core.windows.net/takvhd/takboot.vhd"
+    storage_acct_id   = data.azurerm_storage_account.custom_image_storage_acct.id
+    storage_acct_type = "StandardSSD_LRS"
+    os_type           = "Linux"
+    disk_size_gb      = 1024
+    availability_zone = 1
+  }
+
   virtual_machine_size            = "Standard_B2s"
   disable_password_authentication = false
   admin_username                  = "azureadmin"
   admin_password                  = "P@$$w0rd1234!"
-  instances_count                 = 2 # Number of VM's to be deployed
+  instances_count                 = 1 # Number of VM's to be deployed
 
   # The proximity placement group, Availability Set, and assigning a public IP address to VMs are all optional.
   # If you don't wish to utilize these arguments, delete them from the module. 
-  enable_proximity_placement_group   = true
-  enable_vm_availability_set         = true
+  enable_proximity_placement_group   = false
+  enable_vm_availability_set         = false
   private_ip_address_allocation_type = "Static" # Static or Dynamic
-  private_ip_address                 = ["10.0.1.36", "10.0.1.37"]
+  private_ip_address                 = ["10.0.1.36"]
 
   # Network Security group port definitions for each Virtual Machine 
   # NSG association for all network interfaces to be added automatically.
@@ -104,34 +121,9 @@ module "mod_virtual_machine" {
   # To use a custom storage account, supply a valid name for'storage_account_name'. 
   # Passing a 'null' value will use a Managed Storage Account to store Boot Diagnostics.
   enable_boot_diagnostics = true
+  storage_account_name = azurerm_storage_account.boot_diagnostics_storage_acct.name
 
-  # Attach a managed data disk to a Windows/Linux virtual machine. 
-  # Storage account types include: #'Standard_LRS', #'StandardSSD_ZRS', #'Premium_LRS', #'Premium_ZRS', #'StandardSSD_LRS', #'UltraSSD_LRS' (UltraSSD_LRS is only accessible in regions that support availability zones).
-  # Create a new data drive - connect to the VM and execute diskmanagement or fdisk.
-  data_disks = [
-    {
-      name                 = "disk1"
-      disk_size_gb         = 100
-      storage_account_type = "StandardSSD_LRS"
-    },
-    {
-      name                 = "disk2"
-      disk_size_gb         = 200
-      storage_account_type = "Standard_LRS"
-    }
-  ]
-
-  # AAD Login is used to login to the VM using Azure Active Directory credentials.
-  /* aad_login_enabled = true
-  aad_login_user_objects_ids = [
-    data.azuread_group.vm_users_group.object_id
-  ]
-
-  aad_login_admin_objects_ids = [
-    data.azuread_group.vm_admins_group.object_id
-  ] */
-
-  # (Optional) To activate Azure Monitoring and install log analytics agents 
+    # (Optional) To activate Azure Monitoring and install log analytics agents 
   # (Optional) To save monitoring logs to storage, specify'storage_account_name'.    
   log_analytics_workspace_id = azurerm_log_analytics_workspace.linux-log.id
 
@@ -143,65 +135,30 @@ module "mod_virtual_machine" {
 
   # Adding additional TAG's to your Azure resources
   add_tags = {
-    Example = "basic_linux_virtual_machine_using_existing_RG"
+    Example = "basic_linux_virtual_machine_using_existing_vhd"
   }
 }
 ```
 
-## Pre-Defined Windows and Linux VM Images
+## Custom Boot Image  
 
-By using the `linux_distribution_name` or `windows_distribution_name` arguments with this module, you can deploy pre-defined Windows or Linux images.
+This module will create a new Managed Disk in the target Resource Group. The Managed Disk will be based on the custom VHD image provided. The Managed Disk will be used to create the Virtual Machine.  
 
-OS type |Available Pre-defined Images|
---------|----------------------------|
-Linux |`ubuntu2004`, `ubuntu2004-gen2`, `ubuntu1904`, `ubuntu1804`, `ubuntu1604`, `centos75`, `centos77`, `centos78-gen2`, `centos79-gen2`, `centos81`, `centos81-gen2`, `centos82-gen2`, `centos83-gen2`, `centos84-gen2` `coreos`, `rhel78`, `rhel78-gen2`, `rhel79`, `rhel79-gen2`, `rhel81`, `rhel81-gen2`, `rhel82`, `rhel82-gen2`, `rhel83`, `rhel83-gen2`, `rhel84`, `rhel84-gen2`, `rhel84-byos`, `rhel84-byos-gen2`
-Windows|`windows2012r2dc`, `windows2016dc`, `windows2016dccore`, `windows2019dc`, `windows2019dccore`, `windows2019dccore-g2`, `windows2019dc-gensecond`, `windows2019dc-gs`, `windows2019dc-containers`, `windows2019dc-containers-g2`
-MS SQL 2017|`mssql2017exp`, `mssql2017dev`, `mssql2017std`, `mssql2017ent`
-MS SQL 2019|`mssql2019dev`, `mssql2019std`, `mssql2019ent`
-MS SQL 2019 Linux (RHEL8)|`mssql2019ent-rhel8`, `mssql2019std-rhel8`, `mssql2019dev-rhel8`
-MS SQL 2019 Linux (Ubuntu)|`mssql2019ent-ubuntu1804`, `mssql2019std-ubuntu1804`, `mssql2019dev-ubuntu1804`, `mssql2019ent-ubuntu2004`, `mssql2019std-ubuntu2004`, `mssql2019dev-ubuntu2004`
-MS SQL 2019 Bring your own License (BOYL)|`mssql2019ent-byol`, `mssql2019std-byol`
+> Note: The VHD file must have a `.vhd` extension in the Storage Account.
 
-## Custom Virtual Machine images
+The `custom_boot_image` input is used to specify the custom boot image to use for the virtual machine. The `custom_boot_image` input is a map with the following keys:  
 
-If the pre-defined Windows or Linux variations are insufficient, you can supply a custom image by configuring the 'custom_image' option with appropriate values. Bootstrapping configurations such as preloading apps, application setups, and other OS customizations can all be done with custom images. More information can be found here.(<https://docs.microsoft.com/en-us/azure/virtual-machines/linux/tutorial-custom-images>)
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| vm_generation | The generation of the virtual machine. Possible values are `V1` and `V2`. This value must match the generation of the Custom VHD. | `string` | V1 | no |
+| storage_uri | The URI of the custom boot image. The filename must have a `.vhd` extension. | `string` | n/a | yes |
+| storage_acct_id | The Resource ID of the storage account where the custom boot image is stored. | `string` | n/a | yes |
+| storage_acct_type | The type of the storage account to create when the Managed Disk is created from the custom boot image VHD. Possible values are `Standard_LRS`, `StandardSSD_ZRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_LRS` or `UltraSSD_LRS`.| `string` | StandardSSD_LRS | yes |
+| os_type | The OS type of the custom boot image. Possible values are `Linux` and `Windows`. | `string` | n/a | yes |
+| disk_size_gb | The size of the Managed Disk to create in GB. This must be at least as large as the custom VHD image. | `number` | 1024 | yes |
+| availability_zone | The Availability Zone where the Managed Disk will be created. | `string` | n/a | no |
 
-#### Licensed Marketplace Images
-For some Marketplace images you will need to provide a 'custom_image_plan' object and accept the license terms. For more information on the please see the `plan` block documentation at https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine#plan.  
-
-Before using licensed Marketplace image, you may need to accept legal plan terms using the Powershell command found at https://learn.microsoft.com/en-us/cli/azure/vm/image/terms?view=azure-cli-latest#az-vm-image-terms-accept.  The response from this command will provide the values needed for the `custom_image_plan` object.
-
-```terraform
-module "virtual-machine" {
-  source  = "azurenoops/overlays-virtual-machine/azurerm"
-  version = "x.x.x"
-
-# .... omitted
-  
-  os_flavor               = "linux"
-  linux_distribution_name = "ubuntu2004"
-  virtual_machine_size    = "Standard_B2s"
-  generate_admin_ssh_key  = true
-  instances_count         = 2
-
- os_type = "linux"
-  custom_image = {
-    publisher = "paloaltonetworks"
-    offer     = "panorama"
-    sku       = "byol"
-    version   = "latest"
-  }
-
-  custom_image_plan = {
-    publisher = "paloaltonetworks"
-    product   = "panorama"
-    name      = "byol"
-  }
-
-# .... omitted 
-
-}
-```
+   
 
 ## Network Security Groups
 
@@ -218,12 +175,21 @@ module "virtual-machine" {
 
 # .... omitted
   
-  os_flavor               = "linux"
-  linux_distribution_name = "ubuntu2004"
-  virtual_machine_size    = "Standard_B2s"
-  generate_admin_ssh_key  = true
-  instances_count         = 2
-  
+  custom_boot_image = {
+    storage_uri       = "https://sandboxtakfiles.blob.core.windows.net/takvhd/takboot.vhd"
+    storage_acct_id   = data.azurerm_storage_account.custom_image_storage_acct.id
+    storage_acct_type = "StandardSSD_LRS"
+    os_type           = "Linux"
+    disk_size_gb      = 1024
+    availability_zone = 1
+  }
+
+  virtual_machine_size            = "Standard_B2s"
+  disable_password_authentication = false
+  admin_username                  = "azureadmin"
+  admin_password                  = "P@$$w0rd1234!"
+  instances_count                 = 1 # Number of VM's to be deployed
+
   existing_network_security_group_name = azurerm_network_security_group.linux-nsg.name
   nsg_inbound_rules = [
     {
@@ -265,20 +231,29 @@ module "virtual-machine" {
    source  = "azurenoops/overlays-virtual-machine/azurerm"
   version = "x.x.x"
 
-# .... omitted for bravity
-  
-  os_flavor               = "linux"
-  linux_distribution_name = "ubuntu2004"
-  virtual_machine_size    = "Standard_B2s"
-  generate_admin_ssh_key  = true
-  instances_count         = 2
+# .... omitted 
+ 
+  custom_boot_image = {
+    storage_uri       = "https://sandboxtakfiles.blob.core.windows.net/takvhd/takboot.vhd"
+    storage_acct_id   = data.azurerm_storage_account.custom_image_storage_acct.id
+    storage_acct_type = "StandardSSD_LRS"
+    os_type           = "Linux"
+    disk_size_gb      = 1024
+    availability_zone = 1
+  }
+
+  virtual_machine_size            = "Standard_B2s"
+  disable_password_authentication = false
+  admin_username                  = "azureadmin"
+  admin_password                  = "P@$$w0rd1234!"
+  instances_count                 = 1 # Number of VM's to be deployed
 
   # Network Security group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.  
   existing_virtual_network_resource_group_name = data.azurerm_virtual_network.example.resource_group_name
   existing_network_security_group_name         = data.azurerm_network_security_group.example.name
 
-# .... omitted for bravity
+# .... omitted 
 
 }
 ```
@@ -297,19 +272,28 @@ module "virtual-machine" {
    source  = "azurenoops/overlays-virtual-machine/azurerm"
   version = "x.x.x"
 
-# .... omitted for bravity
-  
-  os_flavor               = "linux"
-  linux_distribution_name = "ubuntu2004"
-  virtual_machine_size    = "Standard_B2s"
-  generate_admin_ssh_key  = true
-  instances_count         = 2
+# .... omitted 
+
+  custom_boot_image = {
+    storage_uri       = "https://sandboxtakfiles.blob.core.windows.net/takvhd/takboot.vhd"
+    storage_acct_id   = data.azurerm_storage_account.custom_image_storage_acct.id
+    storage_acct_type = "StandardSSD_LRS"
+    os_type           = "Linux"
+    disk_size_gb      = 1024
+    availability_zone = 1
+  }
+
+  virtual_machine_size            = "Standard_B2s"
+  disable_password_authentication = false
+  admin_username                  = "azureadmin"
+  admin_password                  = "P@$$w0rd1234!"
+  instances_count                 = 1 # Number of VM's to be deployed
 
   # Network Security group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.  
   existing_network_security_group_name = data.azurerm_network_security_group.example.name
 
-# .... omitted for bravity
+# .... omitted 
 
 }
 ```
@@ -405,8 +389,7 @@ An effective naming convention creates resource names by incorporating vital res
 | <a name="input_custom_computer_name"></a> [custom\_computer\_name](#input\_custom\_computer\_name) | Custom name for the Windows Virtual Machine Hostname. `vm_name` if not set. | `string` | `""` | no |
 | <a name="input_custom_data"></a> [custom\_data](#input\_custom\_data) | Base64 encoded file of a bash script that gets run once by cloud-init upon VM creation | `any` | `null` | no |
 | <a name="input_custom_dcr_name"></a> [custom\_dcr\_name](#input\_custom\_dcr\_name) | Custom name for Data collection rule association | `string` | `null` | no |
-| <a name="input_custom_image"></a> [custom\_image](#input\_custom\_image) | Provide the custom image to this module if the default variants are not sufficient | <pre>map(object({<br>    publisher = string<br>    offer     = string<br>    sku       = string<br>    version   = string<br>  }))</pre> | `null` | no |
-| <a name="input_custom_image_plan"></a> [custom\_image\_plan](#input\_custom\_image\_plan) | Provide the custom image plan to this module if the custom image selected is a licensed Marketplace image | <pre>object({<br>  name = string<br>  product = string<br>  publisher = string<br>})</pre> | `null` | no |
+| <a name="input_custom_boot_image"></a> [custom\_boot\_image](#input\_custom\_boot\_image) | Provide the custom VHD information to this module.  | <pre>object({<br/>  os_type = string<br/>  vm_generation = optional(string, "V1")<br/>  storage_uri = string<br/>  storage_acct_id = string<br/>  storage_acct_type = optional(string, "StandardSSD_LRS")<br/>  disk_size_gb = optional(number, 1024)<br/>  availability_zone = optional(string, null)<br/>})</pre> | `null` | no |
 | <a name="input_custom_ipconfig_name"></a> [custom\_ipconfig\_name](#input\_custom\_ipconfig\_name) | Custom name for the IP config of the NIC. Generated if not set. | `string` | `null` | no |
 | <a name="input_custom_linux_vm_name"></a> [custom\_linux\_vm\_name](#input\_custom\_linux\_vm\_name) | Custom name for the Linux Virtual Machine. Generated if not set. | `string` | `""` | no |
 | <a name="input_custom_nic_name"></a> [custom\_nic\_name](#input\_custom\_nic\_name) | Custom name for the NIC interface. Generated if not set. | `string` | `null` | no |
@@ -441,8 +424,6 @@ An effective naming convention creates resource names by incorporating vital res
 | <a name="input_internal_dns_name_label"></a> [internal\_dns\_name\_label](#input\_internal\_dns\_name\_label) | The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network. | `any` | `null` | no |
 | <a name="input_key_vault_certificate_secret_url"></a> [key\_vault\_certificate\_secret\_url](#input\_key\_vault\_certificate\_secret\_url) | The Secret URL of a Key Vault Certificate, which must be specified when `protocol` is set to `Https` | `any` | `null` | no |
 | <a name="input_license_type"></a> [license\_type](#input\_license\_type) | Specifies the type of on-premise license which should be used for this Virtual Machine. Possible values are None, Windows\_Client and Windows\_Server. | `string` | `"None"` | no |
-| <a name="input_linux_distribution_list"></a> [linux\_distribution\_list](#input\_linux\_distribution\_list) | Pre-defined Azure Linux VM images list | <pre>map(object({<br>    publisher = string<br>    offer     = string<br>    sku       = string<br>    version   = string<br>  }))</pre> | <pre>{<br>  "centos77": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "7.7",<br>    "version": "latest"<br>  },<br>  "centos78-gen2": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "7_8-gen2",<br>    "version": "latest"<br>  },<br>  "centos79-gen2": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "7_9-gen2",<br>    "version": "latest"<br>  },<br>  "centos81": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "8_1",<br>    "version": "latest"<br>  },<br>  "centos81-gen2": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "8_1-gen2",<br>    "version": "latest"<br>  },<br>  "centos82-gen2": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "8_2-gen2",<br>    "version": "latest"<br>  },<br>  "centos83-gen2": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "8_3-gen2",<br>    "version": "latest"<br>  },<br>  "centos84-gen2": {<br>    "offer": "CentOS",<br>    "publisher": "OpenLogic",<br>    "sku": "8_4-gen2",<br>    "version": "latest"<br>  },<br>  "coreos": {<br>    "offer": "CoreOS",<br>    "publisher": "CoreOS",<br>    "sku": "Stable",<br>    "version": "latest"<br>  },<br>  "mssql2019dev-rhel8": {<br>    "offer": "sql2019-rhel8",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "sqldev",<br>    "version": "latest"<br>  },<br>  "mssql2019dev-ubuntu1804": {<br>    "offer": "sql2019-ubuntu1804",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "sqldev",<br>    "version": "latest"<br>  },<br>  "mssql2019dev-ubuntu2004": {<br>    "offer": "sql2019-ubuntu2004",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "sqldev",<br>    "version": "latest"<br>  },<br>  "mssql2019ent-rhel8": {<br>    "offer": "sql2019-rhel8",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "enterprise",<br>    "version": "latest"<br>  },<br>  "mssql2019ent-ubuntu1804": {<br>    "offer": "sql2019-ubuntu1804",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "enterprise",<br>    "version": "latest"<br>  },<br>  "mssql2019ent-ubuntu2004": {<br>    "offer": "sql2019-ubuntu2004",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "enterprise",<br>    "version": "latest"<br>  },<br>  "mssql2019std-rhel8": {<br>    "offer": "sql2019-rhel8",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "standard",<br>    "version": "latest"<br>  },<br>  "mssql2019std-ubuntu1804": {<br>    "offer": "sql2019-ubuntu1804",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "standard",<br>    "version": "latest"<br>  },<br>  "mssql2019std-ubuntu2004": {<br>    "offer": "sql2019-ubuntu2004",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "standard",<br>    "version": "latest"<br>  },<br>  "rhel78": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "7.8",<br>    "version": "latest"<br>  },<br>  "rhel78-gen2": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "78-gen2",<br>    "version": "latest"<br>  },<br>  "rhel79": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "7.9",<br>    "version": "latest"<br>  },<br>  "rhel79-gen2": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "79-gen2",<br>    "version": "latest"<br>  },<br>  "rhel81": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "8.1",<br>    "version": "latest"<br>  },<br>  "rhel81-gen2": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "81gen2",<br>    "version": "latest"<br>  },<br>  "rhel82": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "8.2",<br>    "version": "latest"<br>  },<br>  "rhel82-gen2": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "82gen2",<br>    "version": "latest"<br>  },<br>  "rhel83": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "8.3",<br>    "version": "latest"<br>  },<br>  "rhel83-gen2": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "83gen2",<br>    "version": "latest"<br>  },<br>  "rhel84": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "8.4",<br>    "version": "latest"<br>  },<br>  "rhel84-byos": {<br>    "offer": "rhel-byos",<br>    "publisher": "RedHat",<br>    "sku": "rhel-lvm84",<br>    "version": "latest"<br>  },<br>  "rhel84-byos-gen2": {<br>    "offer": "rhel-byos",<br>    "publisher": "RedHat",<br>    "sku": "rhel-lvm84-gen2",<br>    "version": "latest"<br>  },<br>  "rhel84-gen2": {<br>    "offer": "RHEL",<br>    "publisher": "RedHat",<br>    "sku": "84gen2",<br>    "version": "latest"<br>  },<br>  "ubuntu1604": {<br>    "offer": "UbuntuServer",<br>    "publisher": "Canonical",<br>    "sku": "16.04-LTS",<br>    "version": "latest"<br>  },<br>  "ubuntu1804": {<br>    "offer": "UbuntuServer",<br>    "publisher": "Canonical",<br>    "sku": "18.04-LTS",<br>    "version": "latest"<br>  },<br>  "ubuntu1904": {<br>    "offer": "UbuntuServer",<br>    "publisher": "Canonical",<br>    "sku": "19.04",<br>    "version": "latest"<br>  },<br>  "ubuntu2004": {<br>    "offer": "0001-com-ubuntu-server-focal-daily",<br>    "publisher": "Canonical",<br>    "sku": "20_04-daily-lts",<br>    "version": "latest"<br>  },<br>  "ubuntu2004-gen2": {<br>    "offer": "0001-com-ubuntu-server-focal-daily",<br>    "publisher": "Canonical",<br>    "sku": "20_04-daily-lts-gen2",<br>    "version": "latest"<br>  }<br>}</pre> | no |
-| <a name="input_linux_distribution_name"></a> [linux\_distribution\_name](#input\_linux\_distribution\_name) | Variable to pick an OS flavor for Linux based VM. Possible values include: centos8, ubuntu1804 | `string` | `"ubuntu1804"` | no |
 | <a name="input_load_balancer_backend_pool_id"></a> [load\_balancer\_backend\_pool\_id](#input\_load\_balancer\_backend\_pool\_id) | Id of the Load Balancer Backend Pool to attach the VM. | `string` | `null` | no |
 | <a name="input_location"></a> [location](#input\_location) | Azure region in which instance will be hosted | `string` | n/a | yes |
 | <a name="input_log_analytics_customer_id"></a> [log\_analytics\_customer\_id](#input\_log\_analytics\_customer\_id) | The Workspace (or Customer) ID for the Log Analytics Workspace. | `any` | `null` | no |
@@ -456,14 +437,6 @@ An effective naming convention creates resource names by incorporating vital res
 | <a name="input_nsg_diag_logs"></a> [nsg\_diag\_logs](#input\_nsg\_diag\_logs) | NSG Monitoring Category details for Azure Diagnostic setting | `list` | <pre>[<br>  "NetworkSecurityGroupEvent",<br>  "NetworkSecurityGroupRuleCounter"<br>]</pre> | no |
 | <a name="input_nsg_inbound_rules"></a> [nsg\_inbound\_rules](#input\_nsg\_inbound\_rules) | List of network rules to apply to network interface. | `list` | `[]` | no |
 | <a name="input_org_name"></a> [org\_name](#input\_org\_name) | Name of the organization | `string` | n/a | yes |
-| <a name="input_os_disk_add_tags"></a> [os\_disk\_add\_tags](#input\_os\_disk\_add\_tags) | Extra tags to set on the OS disk. | `map(string)` | `{}` | no |
-| <a name="input_os_disk_caching"></a> [os\_disk\_caching](#input\_os\_disk\_caching) | The Type of Caching which should be used for the Internal OS Disk. Possible values are `None`, `ReadOnly` and `ReadWrite` | `string` | `"ReadWrite"` | no |
-| <a name="input_os_disk_custom_name"></a> [os\_disk\_custom\_name](#input\_os\_disk\_custom\_name) | Custom name for OS disk. Generated if not set. | `string` | `null` | no |
-| <a name="input_os_disk_name"></a> [os\_disk\_name](#input\_os\_disk\_name) | The name which should be used for the Internal OS Disk | `any` | `null` | no |
-| <a name="input_os_disk_overwrite_tags"></a> [os\_disk\_overwrite\_tags](#input\_os\_disk\_overwrite\_tags) | True to overwrite existing OS disk tags instead of merging. | `bool` | `false` | no |
-| <a name="input_os_disk_storage_account_type"></a> [os\_disk\_storage\_account\_type](#input\_os\_disk\_storage\_account\_type) | The Type of Storage Account which should back this the Internal OS Disk. Possible values include Standard\_LRS, StandardSSD\_LRS and Premium\_LRS. | `string` | `"StandardSSD_LRS"` | no |
-| <a name="input_os_disk_tagging_enabled"></a> [os\_disk\_tagging\_enabled](#input\_os\_disk\_tagging\_enabled) | Should OS disk tagging be enabled? Defaults to `true`. | `bool` | `true` | no |
-| <a name="input_os_type"></a> [os\_type](#input\_os\_type) | Specify the type of the operating system image to deploy Virtual Machine. Valid values are `windows` and `linux` Default vaule is `windows` | `string` | `"windows"` | no |
 | <a name="input_patch_mode"></a> [patch\_mode](#input\_patch\_mode) | Specifies the mode of in-guest patching to Linux or Windows Virtual Machine. Possible values are `Manual`, `AutomaticByOS` and `AutomaticByPlatform` | `string` | `"AutomaticByOS"` | no |
 | <a name="input_platform_fault_domain_count"></a> [platform\_fault\_domain\_count](#input\_platform\_fault\_domain\_count) | Specifies the number of fault domains that are used | `number` | `3` | no |
 | <a name="input_platform_update_domain_count"></a> [platform\_update\_domain\_count](#input\_platform\_update\_domain\_count) | Specifies the number of update domains that are used | `number` | `5` | no |
@@ -475,7 +448,6 @@ An effective naming convention creates resource names by incorporating vital res
 | <a name="input_public_ip_sku"></a> [public\_ip\_sku](#input\_public\_ip\_sku) | The SKU of the Public IP. Accepted values are `Basic` and `Standard` | `string` | `"Standard"` | no |
 | <a name="input_public_ip_sku_tier"></a> [public\_ip\_sku\_tier](#input\_public\_ip\_sku\_tier) | The SKU Tier that should be used for the Public IP. Possible values are `Regional` and `Global` | `string` | `"Regional"` | no |
 | <a name="input_random_password_length"></a> [random\_password\_length](#input\_random\_password\_length) | The desired length of random password created by this module | `number` | `24` | no |
-| <a name="input_source_image_id"></a> [source\_image\_id](#input\_source\_image\_id) | The ID of an Image which each Virtual Machine should be based on | `any` | `null` | no |
 | <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name) | The name of the hub storage account to store logs | `any` | `null` | no |
 | <a name="input_storage_account_uri"></a> [storage\_account\_uri](#input\_storage\_account\_uri) | The Primary/Secondary Endpoint for the Azure Storage Account which should be used to store Boot Diagnostics, including Console Output and Screenshots from the Hypervisor. Passing a `null` value will utilize a Managed Storage Account to store Boot Diagnostics. | `any` | `null` | no |
 | <a name="input_subnet_name"></a> [subnet\_name](#input\_subnet\_name) | The name of the subnet to use in VM scale set | `any` | `null` | no |
@@ -485,8 +457,6 @@ An effective naming convention creates resource names by incorporating vital res
 | <a name="input_virtual_network_name"></a> [virtual\_network\_name](#input\_virtual\_network\_name) | The name of the virtual network | `any` | `null` | no |
 | <a name="input_vm_availability_zone"></a> [vm\_availability\_zone](#input\_vm\_availability\_zone) | The Zone in which this Virtual Machine should be created. Conflicts with availability set and shouldn't use both | `any` | `null` | no |
 | <a name="input_vm_time_zone"></a> [vm\_time\_zone](#input\_vm\_time\_zone) | Specifies the Time Zone which should be used by the Virtual Machine | `any` | `null` | no |
-| <a name="input_windows_distribution_list"></a> [windows\_distribution\_list](#input\_windows\_distribution\_list) | Pre-defined Azure Windows VM images list | <pre>map(object({<br>    publisher = string<br>    offer     = string<br>    sku       = string<br>    version   = string<br>  }))</pre> | <pre>{<br>  "mssql2017dev": {<br>    "offer": "SQL2017-WS2019",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "sqldev",<br>    "version": "latest"<br>  },<br>  "mssql2017ent": {<br>    "offer": "SQL2017-WS2019",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "enterprise",<br>    "version": "latest"<br>  },<br>  "mssql2017exp": {<br>    "offer": "SQL2017-WS2019",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "express",<br>    "version": "latest"<br>  },<br>  "mssql2017std": {<br>    "offer": "SQL2017-WS2019",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "standard",<br>    "version": "latest"<br>  },<br>  "mssql2019dev": {<br>    "offer": "sql2019-ws2019",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "sqldev",<br>    "version": "latest"<br>  },<br>  "mssql2019ent": {<br>    "offer": "sql2019-ws2019",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "enterprise",<br>    "version": "latest"<br>  },<br>  "mssql2019ent-byol": {<br>    "offer": "sql2019-ws2019-byol",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "enterprise",<br>    "version": "latest"<br>  },<br>  "mssql2019std": {<br>    "offer": "sql2019-ws2019",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "standard",<br>    "version": "latest"<br>  },<br>  "mssql2019std-byol": {<br>    "offer": "sql2019-ws2019-byol",<br>    "publisher": "MicrosoftSQLServer",<br>    "sku": "standard",<br>    "version": "latest"<br>  },<br>  "windows2012r2dc": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2012-R2-Datacenter",<br>    "version": "latest"<br>  },<br>  "windows2016dc": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2016-Datacenter",<br>    "version": "latest"<br>  },<br>  "windows2016dccore": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2016-Datacenter-Server-Core",<br>    "version": "latest"<br>  },<br>  "windows2019dc": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2019-Datacenter",<br>    "version": "latest"<br>  },<br>  "windows2019dc-containers": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2019-Datacenter-with-Containers",<br>    "version": "latest"<br>  },<br>  "windows2019dc-containers-g2": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2019-datacenter-with-containers-g2",<br>    "version": "latest"<br>  },<br>  "windows2019dc-gensecond": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2019-datacenter-gensecond",<br>    "version": "latest"<br>  },<br>  "windows2019dc-gs": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2019-datacenter-gs",<br>    "version": "latest"<br>  },<br>  "windows2019dccore": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2019-Datacenter-Core",<br>    "version": "latest"<br>  },<br>  "windows2019dccore-g2": {<br>    "offer": "WindowsServer",<br>    "publisher": "MicrosoftWindowsServer",<br>    "sku": "2019-datacenter-core-g2",<br>    "version": "latest"<br>  }<br>}</pre> | no |
-| <a name="input_windows_distribution_name"></a> [windows\_distribution\_name](#input\_windows\_distribution\_name) | Variable to pick an OS flavor for Windows based VM. Possible values include: winserver, wincore, winsql | `string` | `"windows2019dc"` | no |
 | <a name="input_winrm_protocol"></a> [winrm\_protocol](#input\_winrm\_protocol) | Specifies the protocol of winrm listener. Possible values are `Http` or `Https` | `any` | `null` | no |
 | <a name="input_workload_name"></a> [workload\_name](#input\_workload\_name) | Name of the workload\_name | `string` | n/a | yes |
 
